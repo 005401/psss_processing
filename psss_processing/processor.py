@@ -39,7 +39,7 @@ def process_image(image, image_property_name, roi, threshold, rotation):
 
     processed_data[image_property_name + ".spectrum"] = image.sum(0)
 
-    return processed_data
+    return image, processed_data
 
 
 def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
@@ -66,6 +66,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                     statistics["processing_start_time"] = str(datetime.datetime.now())
                     statistics["last_sent_pulse_id"] = None
                     statistics["last_sent_time"] = None
+                    statistics["last_sent_image"] = None
                     statistics["n_processed_images"] = 0
 
                     image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
@@ -86,10 +87,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         image = message.data.data[image_property_name].value
 
-                        processed_data = process_image(image, image_property_name, roi, threshold, rotation)
-
-                        output_pv.put(processed_data[image_property_name + ".spectrum"])
-                        _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+                        image, processed_data = process_image(image, image_property_name, roi, threshold, rotation)
 
                         try:
                             output_stream.send(pulse_id=pulse_id,
@@ -98,12 +96,19 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                             _logger.debug("Sent message with pulse_id %s", pulse_id)
 
+                            output_pv.put(processed_data[image_property_name + ".spectrum"])
+                            _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+
                             statistics["last_sent_pulse_id"] = pulse_id
                             statistics["last_sent_time"] = str(datetime.datetime.now())
+                            statistics["last_sent_image"] = image
                             statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
                         except Again:
                             pass
+
+                        except Exception as e:
+                            _logger.error("Cannot send out the spectrum.", e)
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

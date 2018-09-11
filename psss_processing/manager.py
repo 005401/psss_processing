@@ -84,7 +84,12 @@ class ProcessingManager(object):
         return self.parameters
 
     def get_statistics(self):
-        return deepcopy(self.statistics)
+        result = deepcopy(self.statistics)
+
+        if "last_sent_image" in result:
+            del result["last_sent_image"]
+
+        return result
 
     def _is_running(self):
         return self.processing_thread and self.processing_thread.is_alive()

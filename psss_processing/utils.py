@@ -31,14 +31,3 @@ def get_host_port_from_stream_address(stream_address):
     source_host = source_host.split("//")[1]
 
     return source_host, int(source_port)
-
-
-def append_message_data(message, destination):
-    """
-    Append the data from the original bsread message to the destination dictionary.
-    :param message: Original bsread message to parse.
-    :param destination: Destination dictionary - where to copy the data to.
-    :return:
-    """
-    for value_name, bsread_value in message.data.data.items():
-        destination[value_name] = bsread_value.value

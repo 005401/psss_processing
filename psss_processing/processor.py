@@ -4,6 +4,7 @@ from logging import getLogger
 
 from bsread import source, PULL
 from bsread.sender import sender
+from epics import PV
 from scipy import ndimage
 from zmq import Again
 
@@ -54,7 +55,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
             _logger.info("Sending out data on stream port %s.", output_stream_port)
             _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
 
-            # output_pv = P
+            output_pv = PV(output_pv_name)
 
             with source(host=input_stream_host, port=input_stream_port, mode=PULL,
                         queue_size=config.INPUT_STREAM_QUEUE_SIZE,
@@ -87,24 +88,22 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         processed_data = process_image(image, image_property_name, roi, threshold, rotation)
 
-                        # The send method raises Again if there is no consumer and the output queue is full.
-                        # Continue trying to send the message until a client connects or the running flag is cleared.
-                        while running_flag.is_set():
-                            try:
-                                output_stream.send(pulse_id=pulse_id,
-                                                   timestamp=timestamp,
-                                                   data=processed_data)
+                        output_pv.put(processed_data[image_property_name + ".spectrum"])
+                        _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
 
-                                _logger.debug("Sent message with pulse_id %s", pulse_id)
+                        try:
+                            output_stream.send(pulse_id=pulse_id,
+                                               timestamp=timestamp,
+                                               data=processed_data)
 
-                                statistics["last_sent_pulse_id"] = pulse_id
-                                statistics["last_sent_time"] = str(datetime.datetime.now())
-                                statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
+                            _logger.debug("Sent message with pulse_id %s", pulse_id)
 
-                                break
+                            statistics["last_sent_pulse_id"] = pulse_id
+                            statistics["last_sent_time"] = str(datetime.datetime.now())
+                            statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
-                            except Again:
-                                continue
+                        except Again:
+                            pass
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

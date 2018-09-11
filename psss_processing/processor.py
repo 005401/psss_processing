@@ -45,7 +45,7 @@ def process_image(image, image_property_name, roi, threshold, rotation):
 def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
                          output_pv_name):
 
-    def stream_processor(running_flag, roi, threshold, rotation, statistics):
+    def stream_processor(running_flag, roi, parameters, statistics):
         try:
             running_flag.set()
 
@@ -87,7 +87,8 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         image = message.data.data[image_property_name].value
 
-                        image, processed_data = process_image(image, image_property_name, roi, threshold, rotation)
+                        image, processed_data = process_image(image, image_property_name,
+                                                              roi, parameters["threshold"], parameters["rotation"])
 
                         try:
                             output_stream.send(pulse_id=pulse_id,

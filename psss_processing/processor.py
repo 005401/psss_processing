@@ -34,6 +34,8 @@ def process_image(image, image_property_name, roi, threshold, rotation):
     processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi": roi,
                                                                                  "threshold": threshold,
                                                                                  "rotation": rotation})
+    # The array from bsread is immutable by default.
+    image.setflags(write=True)
 
     image = manipulate_image(image, roi, threshold, rotation)
 
@@ -81,6 +83,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                             continue
 
                         pulse_id = message.data.pulse_id
+                        print("pulse id ", pulse_id)
                         timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
 
                         _logger.debug("Received message with pulse_id %s", pulse_id)
@@ -90,26 +93,26 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         image, processed_data = process_image(image, image_property_name,
                                                               roi, parameters["threshold"], parameters["rotation"])
 
-                        try:
-                            output_stream.send(pulse_id=pulse_id,
-                                               timestamp=timestamp,
-                                               data=processed_data)
+                        while running_flag.is_set():
+                            try:
+                                output_stream.send(pulse_id=pulse_id,
+                                                   timestamp=timestamp,
+                                                   data=processed_data)
 
-                            _logger.debug("Sent message with pulse_id %s", pulse_id)
+                                _logger.debug("Sent message with pulse_id %s", pulse_id)
 
-                            output_pv.put(processed_data[image_property_name + ".spectrum"])
-                            _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+                                statistics["last_sent_pulse_id"] = pulse_id
+                                statistics["last_sent_time"] = str(datetime.datetime.now())
+                                statistics["last_sent_image"] = image
+                                statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
-                            statistics["last_sent_pulse_id"] = pulse_id
-                            statistics["last_sent_time"] = str(datetime.datetime.now())
-                            statistics["last_sent_image"] = image
-                            statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
+                                break
 
-                        except Again:
-                            pass
+                            except Again:
+                                continue
 
-                        except Exception as e:
-                            _logger.error("Cannot send out the spectrum.", e)
+                        output_pv.put(processed_data[image_property_name + ".spectrum"])
+                        _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

@@ -83,7 +83,6 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                             continue
 
                         pulse_id = message.data.pulse_id
-                        print("pulse id ", pulse_id)
                         timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
 
                         _logger.debug("Received message with pulse_id %s", pulse_id)

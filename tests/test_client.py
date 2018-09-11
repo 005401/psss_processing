@@ -159,41 +159,36 @@ class TestClient(unittest.TestCase):
         self.assertListEqual(updated_roi_signal, end_processing_parameters["roi_signal"])
 
     def test_no_roi(self):
-        client = PsenProcessingClient("http://localhost:10000/")
+        client = PsssProcessingClient("http://localhost:10000/")
 
-        roi_signal = []
-        client.set_roi_signal(roi_signal)
-
-        roi_background = None
-        client.set_roi_background(roi_background)
+        roi = []
+        client.set_roi(roi)
 
         client.start()
 
         processed_data = []
 
-        with source(host="localhost", port=12000, mode=PULL, receive_timeout=1000) as input_stream:
+        with source(host="localhost", port=12000, mode=PULL) as input_stream:
             for index in range(self.n_images):
                 processed_data.append(input_stream.receive())
 
         client.stop()
 
-        roi_signal_parameter_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".roi_signal_x_profile"
-        roi_background_parameter_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".roi_background_x_profile"
+        spectrum_parameter_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"
 
         # All the messages should be equal.
         received_data = processed_data[0]
 
         # If the roi is not set, the value should not be added to the output.
-        self.assertTrue(roi_signal_parameter_name not in received_data.data.data)
-        self.assertTrue(roi_background_parameter_name not in received_data.data.data)
+        self.assertTrue(spectrum_parameter_name in received_data.data.data)
 
     def test_stop_when_blocking_send(self):
-        client = PsenProcessingClient("http://localhost:10000/")
+        client = PsssProcessingClient("http://localhost:10000/")
 
         client.start()
 
         def stop_client():
-            client = PsenProcessingClient("http://localhost:10000/")
+            client = PsssProcessingClient("http://localhost:10000/")
             client.stop()
 
         stop_process = Process(target=stop_client)
@@ -204,21 +199,3 @@ class TestClient(unittest.TestCase):
         if stop_process.is_alive() and not stop_process.join(timeout=3):
             stop_process.terminate()
             raise ValueError("The stop call is blocked.")
-
-    def test_received_data_on_send_timeout(self):
-        client = PsenProcessingClient("http://localhost:10000/")
-        client.start()
-
-        processed_data = []
-
-        with source(host="localhost", port=12000, mode=PULL, receive_timeout=1000) as input_stream:
-            for index in range(self.n_images):
-
-                if index == 2:
-                    # Wait for the send timeout to happen.
-                    sleep(config.OUTPUT_STREAM_SEND_TIMEOUT + 1)
-
-                processed_data.append(input_stream.receive())
-
-        for index, data in enumerate(processed_data):
-            self.assertEqual(data.data.pulse_id, index)

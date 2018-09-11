@@ -1,6 +1,6 @@
 package:
-    name: psen_processing
-    version: 1.2.0
+    name: psss_processing
+    version: 0.0.1
 
 source:
     path: ..
@@ -14,13 +14,14 @@ requirements:
 
     run:
         - python
+        - cam_server
         - bottle
         - bsread >=1.2.0
         - requests
 
 build:
   entry_points:
-    - psen_processing = psen_processing.start_processing:main
+    - psss_processing = psss_processing.start_processing:main
 
 about:
-    home: https://github.com/paulscherrerinstitute/psen_processing
+    home: https://github.com/paulscherrerinstitute/psss_processing

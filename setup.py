@@ -1,10 +1,10 @@
 from setuptools import setup
 
-setup(name="psen_processing",
-      version="1.2.0",
+setup(name="psss_processing",
+      version="0.0.1",
       author="Paul Scherrer Institute",
-      description="PSEN image processing.",
+      description="PSSS image processing.",
       license="GPL3",
-      packages=['psen_processing',
-                'psen_processing.rest_api'],
+      packages=['psss_processing',
+                'psss_processing.rest_api'],
       )

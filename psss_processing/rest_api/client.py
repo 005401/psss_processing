@@ -10,10 +10,10 @@ def validate_response(server_response):
     return server_response
 
 
-class PsenProcessingClient(object):
+class PsssProcessingClient(object):
     def __init__(self, address="http://sf-daqsync-02:12000/"):
         """
-        :param address: Address of the PSEN Processing service, e.g. http://localhost:11000
+        :param address: Address of the PSSS Processing service, e.g. http://localhost:12000
         """
 
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + "%s"

@@ -1,1 +1,1 @@
-from psen_processing.rest_api.client import PsenProcessingClient
+from psss_processing.rest_api.client import PsssProcessingClient

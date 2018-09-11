@@ -1,6 +1,6 @@
 import requests
 
-from psen_processing import config
+from psss_processing import config
 
 
 def validate_response(server_response):

@@ -4,9 +4,10 @@ from logging import getLogger
 
 from bsread import source, PULL
 from bsread.sender import sender
-from epics import PV
 from scipy import ndimage
 from zmq import Again
+import epics
+from epics import PV
 
 from psss_processing import config
 
@@ -57,6 +58,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
             _logger.info("Sending out data on stream port %s.", output_stream_port)
             _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
 
+            epics.ca.clear_cache()
             output_pv = PV(output_pv_name)
 
             with source(host=input_stream_host, port=input_stream_port, mode=PULL,

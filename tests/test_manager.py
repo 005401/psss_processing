@@ -1,27 +1,27 @@
 import unittest
 from time import sleep
 
-from psen_processing import config
-from psen_processing.manager import ProcessingManager
-from psen_processing.utils import validate_roi
+from psss_processing import config
+from psss_processing.manager import ProcessingManager
+from psss_processing.utils import validate_roi
 
 
 class TestProcessingManager(unittest.TestCase):
 
     def test_standard_workflow(self):
-        test_roi_signal = []
-        test_roi_background = []
+        test_roi = []
+        test_parameters = {}
 
-        def processor(running_flag, roi_signal, roi_background, statistics):
-            nonlocal test_roi_signal
-            nonlocal test_roi_background
+        def processor(running_flag, roi, parameters, statistics):
+            nonlocal test_roi
+            nonlocal test_parameters
 
             running_flag.set()
 
             while running_flag.is_set():
 
-                test_roi_signal = roi_signal
-                test_roi_background = roi_background
+                test_roi = roi
+                test_parameters = parameters
 
                 statistics["counter"] = statistics.get("counter", 0) + 1
 
@@ -39,15 +39,16 @@ class TestProcessingManager(unittest.TestCase):
             self.assertTrue(manager.running_flag.is_set())
             self.assertEqual(manager.get_status(), "processing")
 
-            roi_signal = [1, 2, 3, 4]
-            manager.set_roi_signal(roi_signal)
+            roi = [1, 2, 3, 4]
+            manager.set_roi(roi)
             sleep(0.1)
-            self.assertListEqual(test_roi_signal, roi_signal)
+            self.assertListEqual(test_roi, roi)
 
-            roi_background = [5, 6, 7, 8]
-            manager.set_roi_background(roi_background)
+            parameters = {"threshold": 10,
+                          "rotation": 5}
+            manager.set_parameters(parameters)
             sleep(0.1)
-            self.assertListEqual(test_roi_background, roi_background)
+            self.assertDictEqual(test_parameters, parameters)
 
             manager.stop()
             self.assertEqual(manager.get_status(), "stopped")
@@ -62,7 +63,7 @@ class TestProcessingManager(unittest.TestCase):
 
     def test_exception_when_starting(self):
 
-        def processor(running_flag, roi_signal, roi_background, statistics):
+        def processor(running_flag, roi, parameters, statistics):
             sleep(config.PROCESSOR_START_TIMEOUT + 0.2)
 
         with self.assertRaisesRegex(RuntimeError, "Cannot start processing"):

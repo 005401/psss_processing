@@ -4,26 +4,26 @@ from logging import getLogger
 
 from copy import deepcopy
 
-from psen_processing import config
-from psen_processing.utils import validate_roi
+from psss_processing import config
+from psss_processing.utils import validate_roi
 
 _logger = getLogger(__name__)
 
 
 class ProcessingManager(object):
 
-    def __init__(self, stream_processor, roi_signal=None, roi_background=None, auto_start=False):
+    def __init__(self, stream_processor, roi=None, parameters=None, auto_start=False):
 
         self.stream_processor = stream_processor
         self.auto_start = auto_start
 
-        if roi_background is None:
-            roi_background = config.DEFAULT_ROI_BACKGROUND or []
-        self.roi_background = roi_background
+        if roi is None:
+            roi = config.DEFAULT_ROI
+        self.roi = roi
 
-        if roi_signal is None:
-            roi_signal = config.DEFAULT_ROI_SIGNAL or []
-        self.roi_signal = roi_signal
+        if parameters is None:
+            parameters = config.DEFAULT_PARAMETERS
+        self.parameters = parameters
 
         self.processing_thread = None
         self.running_flag = None
@@ -42,7 +42,7 @@ class ProcessingManager(object):
         self.running_flag = Event()
 
         self.processing_thread = Thread(target=self.stream_processor,
-                                        args=(self.running_flag, self.roi_signal, self.roi_background, self.statistics))
+                                        args=(self.running_flag, self.roi, self.parameters, self.statistics))
 
         self.processing_thread.start()
 
@@ -60,35 +60,28 @@ class ProcessingManager(object):
         self.processing_thread = None
         self.running_flag = None
 
-    def set_roi_background(self, roi_background):
+    def set_roi(self, roi):
 
-        if not roi_background:
-            roi_background = []
+        if not roi:
+            roi = []
 
-        validate_roi(roi_background)
+        validate_roi(roi)
 
-        _logger.info("Setting ROI background to %s.", roi_background)
+        _logger.info("Setting ROI to %s.", roi)
 
-        self.roi_background.clear()
-        self.roi_background.extend(roi_background)
+        self.roi.clear()
+        self.roi.extend(roi)
 
-    def set_roi_signal(self, roi_signal):
+    def set_parameters(self, parameters):
 
-        if not roi_signal:
-            roi_signal = []
+        self.parameters["threshold"] = parameters.get("threshold", 0)
+        self.parameters["rotation"] = parameters.get("rotation", 0)
 
-        validate_roi(roi_signal)
+    def get_roi(self):
+        return self.roi
 
-        _logger.info("Setting ROI signal to %s.", roi_signal)
-
-        self.roi_signal.clear()
-        self.roi_signal.extend(roi_signal)
-
-    def get_roi_background(self):
-        return self.roi_background
-
-    def get_roi_signal(self):
-        return self.roi_signal
+    def get_parameters(self):
+        return self.parameters
 
     def get_statistics(self):
         return deepcopy(self.statistics)

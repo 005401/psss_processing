@@ -25,7 +25,7 @@ def start_processing(input_stream, output_stream_port, rest_api_interface, rest_
                                             input_stream_port=input_stream_port,
                                             output_stream_port=output_stream_port,
                                             epics_pv_name_prefix=epics_pv_name_prefix,
-                                            output_pv=output_pv)
+                                            output_pv_name=output_pv)
 
     _logger.info("Auto start set to %s.", auto_start)
     manager = ProcessingManager(stream_processor=stream_processor,

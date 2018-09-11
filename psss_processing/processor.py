@@ -33,7 +33,7 @@ def process_image(image, image_property_name, roi_signal, roi_background):
     return processed_data
 
 
-def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix):
+def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix, output_pv):
 
     def stream_processor(running_flag, roi_signal, roi_background, statistics):
         try:

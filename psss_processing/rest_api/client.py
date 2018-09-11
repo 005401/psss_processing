@@ -11,7 +11,7 @@ def validate_response(server_response):
 
 
 class PsenProcessingClient(object):
-    def __init__(self, address="http://sf-daqsync-02:11000/"):
+    def __init__(self, address="http://sf-daqsync-02:12000/"):
         """
         :param address: Address of the PSEN Processing service, e.g. http://localhost:11000
         """

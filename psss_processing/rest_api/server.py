@@ -4,7 +4,7 @@ import logging
 import bottle
 from bottle import request, response
 
-from psen_processing import config
+from psss_processing import config
 
 _logger = logging.getLogger(__name__)
 
@@ -34,38 +34,36 @@ def register_rest_interface(app, instance_manager):
         return {"state": "ok",
                 "status": instance_manager.get_status()}
 
-    @app.get(api_root_address + "/roi_background")
-    def get_roi_background():
+    @app.get(api_root_address + "/roi")
+    def get_roi():
 
         return {"state": "ok",
                 "status": instance_manager.get_status(),
-                "roi_background": instance_manager.get_roi_background()}
+                "roi_background": instance_manager.get_roi()}
 
-    @app.post(api_root_address + "/roi_background")
-    def set_roi_background():
-
-        roi_background = request.json
-        instance_manager.set_roi_background(roi_background)
+    @app.post(api_root_address + "/roi")
+    def set_roi():
+        roi = request.json
+        instance_manager.set_roi(roi)
 
         return {"state": "ok",
                 "status": instance_manager.get_status(),
-                "roi_background": instance_manager.get_roi_background()}
+                "roi_background": instance_manager.get_roi()}
 
-    @app.get(api_root_address + "/roi_signal")
+    @app.get(api_root_address + "/parameters")
     def get_roi_signal():
         return {"state": "ok",
                 "status": instance_manager.get_status(),
-                "roi_signal": instance_manager.get_roi_signal()}
+                "roi_signal": instance_manager.get_parameters()}
 
-    @app.post(api_root_address + "/roi_signal")
-    def set_roi_signal():
-
-        roi_signal = request.json
-        instance_manager.set_roi_signal(roi_signal)
+    @app.post(api_root_address + "/parameters")
+    def set_parameters():
+        parameters = request.json
+        instance_manager.set_parameters(parameters)
 
         return {"state": "ok",
                 "status": instance_manager.get_status(),
-                "roi_signal": instance_manager.get_roi_signal()}
+                "roi_signal": instance_manager.get_parameters()}
 
     @app.get(api_root_address + "/statistics")
     def get_statistics():

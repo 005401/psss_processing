@@ -65,44 +65,44 @@ class PsenProcessingClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["statistics"]
 
-    def get_roi_signal(self):
+    def get_roi(self):
         """
-        Get the ROI for the signal.
-        :return: Signal ROI as a list.
+        Get the ROI.
+        :return: ROI as a list.
         """
-        rest_endpoint = "/roi_signal"
+        rest_endpoint = "/roi"
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["roi_signal"]
+        return validate_response(server_response)["roi"]
 
-    def set_roi_signal(self, roi):
+    def set_roi(self, roi):
         """
-        Set the ROI for the signal.
+        Set the ROI.
         :param roi: List of 4 elements: [offset_x, size_x, offset_y, size_y] or [] or None.
-        :return: Signal ROI as a list.
+        :return: ROI as a list.
         """
-        rest_endpoint = "/roi_signal"
+        rest_endpoint = "/roi"
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=roi).json()
-        return validate_response(server_response)["roi_signal"]
+        return validate_response(server_response)["roi"]
 
-    def get_roi_background(self):
+    def get_parameters(self):
         """
-        Get the ROI for the background.
-        :return: Background ROI as a list.
+        Get the processing parameters
+        :return: Processing parameters as a dictionary.
         """
-        rest_endpoint = "/roi_background"
+        rest_endpoint = "/parameters"
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["roi_background"]
+        return validate_response(server_response)["parameters"]
 
-    def set_roi_background(self, roi):
+    def set_parameters(self, parameters):
         """
-        Set the ROI for the background.
-        :param roi: List of 4 elements: [offset_x, size_x, offset_y, size_y] or [] or None.
-        :return: Background ROI as a list.
+        Set the processing parameters
+        :param parameters: Dictionary with 2 elements: threshold, rotation
+        :return: Set parameters.
         """
-        rest_endpoint = "/roi_background"
+        rest_endpoint = "/parameters"
 
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=roi).json()
-        return validate_response(server_response)["roi_background"]
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=parameters).json()
+        return validate_response(server_response)["parameters"]

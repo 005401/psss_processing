@@ -1,41 +1,50 @@
 import datetime
+import json
 from logging import getLogger
 
-from bsread import source, json, PULL
+from bsread import source, PULL
 from bsread.sender import sender
+from scipy import ndimage
 from zmq import Again
 
-from psen_processing import config
-from psen_processing.utils import append_message_data
+from psss_processing import config
 
 _logger = getLogger(__name__)
 
 
-def get_roi_x_profile(image, roi):
-    offset_x, size_x, offset_y, size_y = roi
-    roi_image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+def manipulate_image(image, roi, threshold, rotation):
 
-    return roi_image.sum(0)
+    if threshold > 0:
+        image[image < int(threshold)] = 0
+
+    if rotation != 0:
+        image = ndimage.rotate(image, angle=rotation)
+
+    if roi:
+        offset_x, size_x, offset_y, size_y = roi
+        image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+
+    return image
 
 
-def process_image(image, image_property_name, roi_signal, roi_background):
+def process_image(image, image_property_name, roi, threshold, rotation):
     processed_data = dict()
 
-    processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi_signal": roi_signal,
-                                                                                 "roi_background": roi_background})
+    processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi": roi,
+                                                                                 "threshold": threshold,
+                                                                                 "rotation": rotation})
 
-    if roi_signal:
-        processed_data[image_property_name + ".roi_signal_x_profile"] = get_roi_x_profile(image, roi_signal)
+    image = manipulate_image(image, roi, threshold, rotation)
 
-    if roi_background:
-        processed_data[image_property_name + ".roi_background_x_profile"] = get_roi_x_profile(image, roi_background)
+    processed_data[image_property_name + ".spectrum"] = image.sum(0)
 
     return processed_data
 
 
-def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix, output_pv):
+def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
+                         output_pv_name):
 
-    def stream_processor(running_flag, roi_signal, roi_background, statistics):
+    def stream_processor(running_flag, roi, threshold, rotation, statistics):
         try:
             running_flag.set()
 
@@ -43,6 +52,9 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                          input_stream_host, input_stream_port)
 
             _logger.info("Sending out data on stream port %s.", output_stream_port)
+            _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
+
+            # output_pv = P
 
             with source(host=input_stream_host, port=input_stream_port, mode=PULL,
                         queue_size=config.INPUT_STREAM_QUEUE_SIZE,
@@ -73,9 +85,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         image = message.data.data[image_property_name].value
 
-                        processed_data = process_image(image, image_property_name, roi_signal, roi_background)
-
-                        # append_message_data(message=message, destination=processed_data)
+                        processed_data = process_image(image, image_property_name, roi, threshold, rotation)
 
                         # The send method raises Again if there is no consumer and the output queue is full.
                         # Continue trying to send the message until a client connects or the running flag is cleared.

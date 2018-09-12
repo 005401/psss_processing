@@ -91,6 +91,9 @@ class ProcessingManager(object):
 
         return result
 
+    def get_last_processed_image(self):
+        return self.statistics.get("last_sent_image")
+
     def _is_running(self):
         return self.processing_thread and self.processing_thread.is_alive()
 

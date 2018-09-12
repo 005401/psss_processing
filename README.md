@@ -1,27 +1,15 @@
-[![Build Status](https://travis-ci.org/paulscherrerinstitute/psen_processing.svg?branch=master)](https://travis-ci.org/paulscherrerinstitute/psen_processing)
+[![Build Status](https://travis-ci.org/paulscherrerinstitute/psss_processing.svg?branch=master)](https://travis-ci.org/paulscherrerinstitute/psss_processing)
 
-# PSEN Processing
-This library is meant to be a stream device for processing images from PSEN cameras.
+# PSSS Processing
+This library is meant to be a stream device for processing images from PSSS cameras.
 
 ## Overview
-This service takes the input stream from a camera, applies 2 ROIs (region of interest) to the image 
-(signal and background) and calculates the X profile for both ROIs. It then sends this calculated data 
-together with the input stream data to the output stream.
-
-There are 2 ROIs you can set:
-- Signal ROI.
-- Background ROI.
-
-They do exactly the same calculation (X profile of the given ROI) but are named differently to make it easier to 
-distinguish them. If one of the ROI is not set, the X profile for this ROI will not be present in the output stream.
-
-In addition to the X profiles, the processing parameters (both ROI values) are also added to the output stream.
 
 ## REST Api
-In the API description, localhost and port 11000 are assumed. Please change this for your specific case.
+In the API description, localhost and port 12000 are assumed. Please change this for your specific case.
 
 ### ROI format
-Both ROIs (background, signal) are defined in the following format:
+ROI is defined in the following format:
 - **\[offset_x, size_x, offset_y, size_y\]** - the offsets are calculated from the top left corner of the image.
 
 ROI is valid if:
@@ -36,45 +24,45 @@ ROI is valid if:
 All request return a JSON with the following fields:
 - **state** - \["ok", "error"\]
 - **status** - \["stopped", "processing"\]
-- Optional request specific field - \["roi_background", "roi_signal", "statistics"]
+- Optional request specific field - \["roi", "parameters"]
 
 **Endpoints**:
 
-* `POST localhost:11000/start` - Start the processing of images.
+* `POST localhost:12000/start` - Start the processing of images.
 
-* `POST localhost:11000/stop` - Stop the processing of images.
+* `POST localhost:12000/stop` - Stop the processing of images.
 
-* `GET localhost:11000/status` - Get the status of the processing.
+* `GET localhost:12000/status` - Get the status of the processing.
 
-* `GET localhost:11000/roi_background` - Get the currently set background ROI.
+* `GET localhost:12000/roi` - Get the currently set background ROI.
     - Response specific field: "roi_background" - ROI for the background.
     
-* `POST localhost:11000/roi_background` - Set background ROI.
+* `POST localhost:12000/roi` - Set background ROI.
     - Response specific field: "roi_background" - ROI for the background.
     
-* `GET localhost:11000/roi_signal` - Get the currently set signal ROI.
+* `GET localhost:12000/parameters` - Get the currently set signal ROI.
     - Response specific field: "roi_signal" - ROI for the signal.
     
-* `POST localhost:11000/roi_signal` - Set signal ROI.
+* `POST localhost:12000/parameters` - Set signal ROI.
     - Response specific field: "roi_signal" - ROI for the signal.
 
-* `GET localhost:11000/statistics` - get process statistics.
+* `GET localhost:12000/statistics` - get process statistics.
     - Response specific field: "statistics" - Data about the processing.
     
 ### Python client
 The rest API is also wrapped in a Python client. To use it:
 ```python
 
-from psen_processing import PsenProcessingClient
-client = PsenProcessingClient(address="http://sf-daqsync-02:11000/")
+from psss_processing import PsssProcessingClient
+client = PsssProcessingClient(address="http://sf-daqsync-02:12000/")
 ```
 
 Class definition:
 ```
 class PsenProcessingClient(builtins.object)
 
-    __init__(self, address='http://sf-daqsync-02:11000/')
-        :param address: Address of the PSEN Processing service, e.g. http://localhost:11000
+    __init__(self, address='http://sf-daqsync-02:12000/')
+        :param address: Address of the PSEN Processing service, e.g. http://localhost:12000
   
     get_address(self)
         Return the REST api endpoint address.

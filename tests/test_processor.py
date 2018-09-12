@@ -65,11 +65,11 @@ class TestProcessing(unittest.TestCase):
     def test_stream_processor(self):
         pv_name_prefix = "JUST_TESTING"
         n_images = 5
-        original_roi = [0, 1024, 0, 512]
+        original_roi = [100, 300, 100, 200]
         original_parameters = {"threshold": 0,
-                               "rotation": 0}
+                               "rotation": 90}
 
-        image = numpy.zeros(shape=(1024, 1024), dtype="uint16")
+        image = numpy.zeros(shape=(1024, 512), dtype="uint16")
         image += 1
 
         data_to_send = {pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE: image}
@@ -98,7 +98,7 @@ class TestProcessing(unittest.TestCase):
 
         final_data = []
 
-        with source(host="localhost", port=11000, mode=PULL, receive_timeout=1000) as input_stream:
+        with source(host="localhost", port=11000, mode=PULL) as input_stream:
             for _ in range(n_images):
                 final_data.append(input_stream.receive())
 
@@ -121,5 +121,5 @@ class TestProcessing(unittest.TestCase):
 
         spectrum = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"].value
 
-        self.assertEqual(len(spectrum), 1024)
-        self.assertListEqual(list(spectrum), [512] * 1024)
+        self.assertEqual(len(spectrum), 300)
+        self.assertListEqual(list(spectrum), [200] * 300)

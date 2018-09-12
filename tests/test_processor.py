@@ -7,60 +7,49 @@ from multiprocessing import Process, Event
 from bsread import source, PULL, json
 
 from psss_processing import config
-from psss_processing.processor import get_stream_processor
+from psss_processing.processor import get_stream_processor, manipulate_image, process_image
 
 
 class TestProcessing(unittest.TestCase):
-    def test_get_roi_x_profile(self):
-        image = numpy.zeros(shape=(1024, 1024), dtype="uint16")
+    def test_manipulate_image(self):
+
+        image = numpy.zeros(shape=(1024, 512), dtype="uint16")
         image += 1
 
-        roi = [0, 1024, 0, 1024]
-        x_profile = get_roi_x_profile(image, roi)
+        self.assertEqual(manipulate_image(image, None, 0, 0).shape, (1024, 512))
+        self.assertEqual(manipulate_image(image, None, 0, 90).shape, (512, 1024))
 
-        self.assertEqual(len(x_profile), 1024)
-        self.assertListEqual(list(x_profile), [1024] * 1024)
+        new_shape = manipulate_image(image, None, 0, 45).shape
+        # Rotating by 45 degree should always give you a square.
+        self.assertEqual(new_shape[0], new_shape[1])
+        # The threshold should remove all data.
+        self.assertEqual(manipulate_image(image, None, 2, 0).sum(), 0)
 
-        roi = [0, 100, 0, 1024]
-        x_profile = get_roi_x_profile(image, roi)
-
-        self.assertEqual(len(x_profile), 100)
-        self.assertListEqual(list(x_profile), [1024] * 100)
-
-        roi = [0, 100, 0, 100]
-        x_profile = get_roi_x_profile(image, roi)
-
-        self.assertEqual(len(x_profile), 100)
-        self.assertListEqual(list(x_profile), [100] * 100)
+        roi = [200, 300, 200, 150]
+        self.assertEqual(manipulate_image(image, roi, 0, 45).shape, (150, 300))
 
     def test_process_image(self):
-        image = numpy.zeros(shape=(1024, 1024), dtype="uint16")
+        image = numpy.zeros(shape=(1024, 512), dtype="uint16")
         image += 1
 
         image_property_name = "TESTING_IMAGE"
 
-        roi_signal = [0, 1024, 0, 1024]
-        roi_background = []
+        roi = [0, 512, 0, 1024]
 
-        processed_data = process_image(image, image_property_name, roi_signal, roi_background)
-
+        image, processed_data = process_image(image, image_property_name, roi, 15, 90)
         self.assertSetEqual(set(processed_data.keys()), {image_property_name + ".processing_parameters",
-                                                         image_property_name + ".roi_signal_x_profile"})
+                                                         image_property_name + ".spectrum"})
 
-        roi_signal = [0, 1024, 0, 1024]
-        roi_background = [0, 100, 0, 100]
+        # After rotating for 90 degrees this is the largest image we can get for the ROI.
+        self.assertEqual(image.shape, (512, 512))
 
-        processed_data = process_image(image, image_property_name, roi_signal, roi_background)
+        self.assertEqual(len(processed_data[image_property_name + ".spectrum"]), 512)
 
-        self.assertSetEqual(set(processed_data.keys()), {image_property_name + ".processing_parameters",
-                                                         image_property_name + ".roi_signal_x_profile",
-                                                         image_property_name + ".roi_background_x_profile"})
+        processing_parameters = json.loads(processed_data[image_property_name + ".processing_parameters"])
 
-        self.assertEqual(len(processed_data[image_property_name + ".roi_signal_x_profile"]), 1024)
-        self.assertListEqual(list(processed_data[image_property_name + ".roi_signal_x_profile"]), [1024] * 1024)
-
-        self.assertEqual(len(processed_data[image_property_name + ".roi_background_x_profile"]), 100)
-        self.assertListEqual(list(processed_data[image_property_name + ".roi_background_x_profile"]), [100] * 100)
+        self.assertEqual(processing_parameters["threshold"], 15)
+        self.assertEqual(processing_parameters["rotation"], 90)
+        self.assertListEqual(processing_parameters["roi"], roi)
 
     def test_stream_processor(self):
         pv_name_prefix = "JUST_TESTING"

@@ -6,8 +6,8 @@ from bsread.sender import sender
 from multiprocessing import Process, Event
 from bsread import source, PULL, json
 
-from psen_processing import config
-from psen_processing.processor import get_roi_x_profile, process_image, get_stream_processor
+from psss_processing import config
+from psss_processing.processor import get_stream_processor
 
 
 class TestProcessing(unittest.TestCase):
@@ -65,8 +65,9 @@ class TestProcessing(unittest.TestCase):
     def test_stream_processor(self):
         pv_name_prefix = "JUST_TESTING"
         n_images = 5
-        original_roi_signal = [0, 1024, 0, 1024]
-        original_roi_background = [0, 100, 0, 100]
+        original_roi = [0, 1024, 0, 512]
+        original_parameters = {"threshold": 0,
+                               "rotation": 0}
 
         image = numpy.zeros(shape=(1024, 1024), dtype="uint16")
         image += 1
@@ -82,9 +83,10 @@ class TestProcessing(unittest.TestCase):
             stream_processor = get_stream_processor(input_stream_host="localhost",
                                                     input_stream_port=10000,
                                                     output_stream_port=11000,
-                                                    epics_pv_name_prefix=pv_name_prefix)
+                                                    epics_pv_name_prefix=pv_name_prefix,
+                                                    output_pv_name="Does not matter")
 
-            stream_processor(event, original_roi_signal, original_roi_background, {})
+            stream_processor(event, original_roi, original_parameters, {})
 
         running_event = Event()
 
@@ -113,17 +115,11 @@ class TestProcessing(unittest.TestCase):
                                              ".processing_parameters"].value
         processing_parameters = json.loads(parameters)
 
-        self.assertEqual(processing_parameters["roi_signal"], original_roi_signal)
-        self.assertEqual(processing_parameters["roi_background"], original_roi_background)
+        self.assertEqual(processing_parameters["roi"], original_roi)
+        self.assertEqual({"threshold": processing_parameters["threshold"],
+                         "rotation": processing_parameters["rotation"]}, original_parameters)
 
-        roi_signal = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE +
-                                             ".roi_signal_x_profile"].value
+        spectrum = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"].value
 
-        self.assertEqual(len(roi_signal), 1024)
-        self.assertListEqual(list(roi_signal), [1024] * 1024)
-
-        roi_background = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE +
-                                                 ".roi_background_x_profile"].value
-
-        self.assertEqual(len(roi_background), 100)
-        self.assertListEqual(list(roi_background), [100] * 100)
+        self.assertEqual(len(spectrum), 1024)
+        self.assertListEqual(list(spectrum), [512] * 1024)

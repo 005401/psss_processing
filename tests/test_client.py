@@ -119,44 +119,44 @@ class TestClient(unittest.TestCase):
         self.assertEqual(client.get_status(), "stopped")
 
     def test_change_roi_while_running(self):
-        client = PsenProcessingClient("http://localhost:10000/")
+        client = PsssProcessingClient("http://localhost:10000/")
 
-        roi_signal = [0, 1024, 0, 1024]
-        client.set_roi_signal(roi_signal)
-
-        roi_background = [0, 100, 0, 100]
-        client.set_roi_background(roi_background)
-
-        client.start()
+        roi = [0, 1024, 0, 1024]
+        client.set_roi(roi)
 
         processed_data = []
 
-        with source(host="localhost", port=12000, mode=PULL, receive_timeout=1000) as input_stream:
-            for index in range(self.n_images):
-                processed_data.append(input_stream.receive())
+        client.start()
 
-        updated_roi_signal = [100, 200, 100, 200]
-        client.set_roi_signal(updated_roi_signal)
+        with source(host="localhost", port=12000, mode=PULL) as input_stream:
+            # First pulse_id comes before the source connects.
+            for index in range(self.n_images-1):
+                message = input_stream.receive()
+                processed_data.append(message)
+
+        updated_roi = [100, 200, 100, 200]
+        client.set_roi(updated_roi)
 
         data_to_send = {self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE: self.image}
 
-        with sender(port=11000) as output_stream:
+        with sender(port=10001) as output_stream:
             for x in range(self.n_images):
                 output_stream.send(data=data_to_send)
 
-        with source(host="localhost", port=12000, mode=PULL, receive_timeout=1000) as input_stream:
+        with source(host="localhost", port=12000, mode=PULL) as input_stream:
             for index in range(self.n_images):
-                processed_data.append(input_stream.receive())
+                message = input_stream.receive()
+                processed_data.append(message)
 
         client.stop()
 
         processing_parameters_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".processing_parameters"
 
         start_processing_parameters = json.loads(processed_data[0].data.data[processing_parameters_name].value)
-        end_processing_parameters = json.loads(processed_data[9].data.data[processing_parameters_name].value)
+        end_processing_parameters = json.loads(processed_data[8].data.data[processing_parameters_name].value)
 
-        self.assertListEqual(roi_signal, start_processing_parameters["roi_signal"])
-        self.assertListEqual(updated_roi_signal, end_processing_parameters["roi_signal"])
+        self.assertListEqual(roi, start_processing_parameters["roi"])
+        self.assertListEqual(updated_roi, end_processing_parameters["roi"])
 
     def test_no_roi(self):
         client = PsssProcessingClient("http://localhost:10000/")

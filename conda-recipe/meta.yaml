@@ -20,6 +20,7 @@ requirements:
         - bottle
         - bsread >=1.2.0
         - requests
+        - matplotlib
 
 build:
   entry_points:

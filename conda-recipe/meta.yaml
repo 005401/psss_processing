@@ -21,6 +21,8 @@ requirements:
         - bsread >=1.2.0
         - requests
         - matplotlib
+        - pillow
+
 
 build:
   entry_points:

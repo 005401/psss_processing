@@ -1,7 +1,7 @@
 import tempfile
 
 import numpy
-import scipy
+from PIL import Image
 
 from psss_processing import config
 from matplotlib import cm
@@ -83,7 +83,7 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
                          "See http://matplotlib.org/examples/color/colormaps_reference.html for available colormaps." %
                          colormap_name)
 
-    n_image = scipy.misc.toimage(image)
+    n_image = Image.fromarray(image)
 
     tmp_file = tempfile.TemporaryFile()
 

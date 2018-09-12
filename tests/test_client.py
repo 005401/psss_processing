@@ -194,7 +194,7 @@ class TestClient(unittest.TestCase):
         stop_process = Process(target=stop_client)
         stop_process.start()
 
-        sleep(0.5)
+        sleep(1)
 
         if stop_process.is_alive() and not stop_process.join(timeout=3):
             stop_process.terminate()

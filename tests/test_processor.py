@@ -116,3 +116,11 @@ class TestProcessing(unittest.TestCase):
 
         self.assertEqual(len(spectrum), 300)
         self.assertListEqual(list(spectrum), [200] * 300)
+
+    def test_max_threshold(self):
+        image = numpy.zeros(shape=(1024, 512), dtype="uint16")
+        image += 50
+
+        self.assertTrue(manipulate_image(image, None, 0, 50, 0).sum() > 0)
+        self.assertTrue(manipulate_image(image, None, 0, 51, 0).sum() > 0)
+        self.assertTrue(manipulate_image(image, None, 0, 49, 0).sum() == 0)

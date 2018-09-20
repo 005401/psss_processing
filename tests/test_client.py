@@ -70,7 +70,8 @@ class TestClient(unittest.TestCase):
         client.set_roi(roi)
         self.assertListEqual(client.get_roi(), roi)
 
-        parameters = {"threshold": 10,
+        parameters = {"min_threshold": 10,
+                      "max_threshold": 0,
                       "rotation": 45}
         client.set_parameters(parameters)
         self.assertDictEqual(client.get_parameters(), parameters)

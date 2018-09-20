@@ -74,7 +74,8 @@ class ProcessingManager(object):
 
     def set_parameters(self, parameters):
 
-        self.parameters["threshold"] = parameters.get("threshold", 0)
+        self.parameters["min_threshold"] = parameters.get("min_threshold", 0)
+        self.parameters["max_threshold"] = parameters.get("max_threshold", 0)
         self.parameters["rotation"] = parameters.get("rotation", 0)
 
     def get_roi(self):

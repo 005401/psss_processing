@@ -99,7 +99,7 @@ class PsssProcessingClient(object):
     def set_parameters(self, parameters):
         """
         Set the processing parameters
-        :param parameters: Dictionary with 2 elements: threshold, rotation
+        :param parameters: Dictionary with 3 elements: min_threshold, max_threshold, rotation
         :return: Set parameters.
         """
         rest_endpoint = "/parameters"

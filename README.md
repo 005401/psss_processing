@@ -59,7 +59,7 @@ ROI is valid if:
 All request return a JSON with the following fields:
 - **state** - \["ok", "error"\]
 - **status** - \["stopped", "processing"\]
-- Optional request specific field - \["roi", "parameters"]
+- Optional request specific field - \["roi", "parameters", "statistics"]
 
 **Endpoints**:
 

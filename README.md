@@ -25,7 +25,7 @@ or by using the provided Python client.
 TODO: Write how to easily do something.
 
 ### Available parameters
-
+TODO: Write about the parameters that are available to be set.
 
 ### Order of image manipulation
 

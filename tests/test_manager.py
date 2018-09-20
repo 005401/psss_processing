@@ -44,7 +44,8 @@ class TestProcessingManager(unittest.TestCase):
             sleep(0.1)
             self.assertListEqual(test_roi, roi)
 
-            parameters = {"threshold": 10,
+            parameters = {"min_threshold": 10,
+                          "max_threshold": 0,
                           "rotation": 5}
             manager.set_parameters(parameters)
             sleep(0.1)

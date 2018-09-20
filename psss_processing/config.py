@@ -6,7 +6,8 @@ DEFAULT_LOGGING_LEVEL = "INFO"
 DEFAULT_OUTPUT_STREAM_PORT = 8889
 
 DEFAULT_ROI = []
-DEFAULT_PARAMETERS = {"threshold": 0,
+DEFAULT_PARAMETERS = {"min_threshold": 0,
+                      "max_threshold": 0,
                       "rotation": 0}
 
 PROCESSOR_START_TIMEOUT = 1

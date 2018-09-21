@@ -87,16 +87,16 @@ class ProcessingManager(object):
     def get_statistics(self):
         result = deepcopy(self.statistics)
 
-        if "last_sent_image" in result:
-            del result["last_sent_image"]
+        if "last_manipulated_image" in result:
+            del result["last_manipulated_image"]
 
-        if "last_sent_spectrum" in result:
-            del result["last_sent_spectrum"]
+        if "last_calculated_spectrum" in result:
+            del result["last_calculated_spectrum"]
 
         return result
 
     def get_last_processed_image(self):
-        return self.statistics.get("last_sent_image")
+        return self.statistics.get("last_manipulated_image")
 
     def _is_running(self):
         return self.processing_thread and self.processing_thread.is_alive()

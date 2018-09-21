@@ -211,6 +211,9 @@ The library relies on the following packages:
 - requests
 - matplotlib
 - pillow
+- dash
+- dash-core-components
+- dash-html-components
 
 In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to 
 your conda config:

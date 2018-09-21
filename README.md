@@ -3,6 +3,16 @@
 # PSSS Processing
 This library is meant to be a stream device for processing images from PSSS cameras.
 
+## Currently running
+
+- PSSS processing is running on **sf-daqsync-02**, rest api on port **12000**.
+- Images are taken over from camera SARFE10-PSSS059.
+- Output stream is available on **tcp://sf-daqsync-02:8889**.
+- PV with the latest spectrum is **SARFE10-PSSS059:SPECTRUM**.
+
+The stream is being sent to the dispatching layer for storage (original image, spectrum, processing parameters), so 
+please do not connect directly to the output stream and request the data from the dispatching layer.
+
 ## Overview
 The service accepts a bsread stream from a camera, it manipulates the picture based on the current settings, 
 and calculates the spectrum of the manipulated image. The spectrum, together with the original image and the processing 

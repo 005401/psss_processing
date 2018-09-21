@@ -62,11 +62,10 @@ In the API description, localhost and port 12000 are assumed. Please change this
 ROI is defined in the following format:
 - **\[offset_x, size_x, offset_y, size_y\]** - the offsets are calculated from the top left corner of the image.
 
-The ROI is applied 
+The ROI is applied only if it is valid. ROI is valid if:
 
-ROI is valid if:
-- Is None (no processing for this ROI).
-- Is [] - empty list (no processing for this ROI).
+- Is None (no processing).
+- Is [] - empty list (no processing).
 - Is a list with 4 values (offset_x, size_x, offset_y, size_y):
     - Offsets cannot be negative.
     - Sizes must be larger than 0.

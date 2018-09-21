@@ -95,13 +95,15 @@ All request return a JSON with the following fields:
     - Response specific field: "parameters".
     
 * `POST localhost:12000/parameters` - Set parameters.
-    - Response specific field: "parameters" - ROI for the signal.
+    - Response specific field: "parameters".
 
 * `GET localhost:12000/statistics` - get process statistics.
     - Response specific field: "statistics" - Data about the processing.
     
 * `GET localhost:12000/image` - get the last processed image in PNG format.
     - This is the image used for the spectrum calculation, not the original image sent in the output stream.
+    
+Getting the image in PNG format can be useful to verify if the threshold values and the rotation are set correctly. 
     
 ### Python client
 The rest API is also wrapped in a Python client. To use it:
@@ -160,14 +162,14 @@ class PsssProcessingClient(builtins.object)
 ```
 
 ## Output stream
-The names of the new parameters in the output stream are dependent on the names of the parameters in the input stream.
+The names of the parameters in the output stream are dependent on the names of the parameters in the input stream.
 The prefix of parameters in the input stream are specified with the **--prefix** argument when running the server.
 
 For this example let's assume that we use **--prefix SLAAR21-LCAM-C561**.
 
 In this case, the server will look for the image in the **SLAAR21-LCAM-C561:FPICTURE** parameter.
 
-This means that the output stream will have this additional parameters:
+This means that the output stream will have the following parameters:
 - SLAAR21-LCAM-C561:FPICTURE
 - SLAAR21-LCAM-C561:FPICTURE.specturm (X profile of the processed image)
 - SLAAR21-LCAM-C561:FPICTURE.processing_parameters (Parameters used for processing the image)

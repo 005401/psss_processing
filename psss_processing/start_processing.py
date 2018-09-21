@@ -45,7 +45,7 @@ def start_processing(input_stream, output_stream_port, rest_api_interface, rest_
 def main():
     parser = argparse.ArgumentParser(description='PSSS camera processing.')
     parser.add_argument('input_stream', help="Input bsread stream to process.")
-    parser.add_argument("-i", 'prefix', default=config.DEFAULT_INTPUT_OV, help="Epics PV prefix of the image.")
+    parser.add_argument("-i", 'prefix', default=config.DEFAULT_INPUT_PV, help="Epics PV prefix of the image.")
     parser.add_argument('-p', 'output_pv', default=config.DEFAULT_OUTPUT_PV, help="Epics PV to send the spectrum to.")
     parser.add_argument('-o', '--output_stream_port', type=int, default=config.DEFAULT_OUTPUT_STREAM_PORT,
                         help="Output bsread stream port.")

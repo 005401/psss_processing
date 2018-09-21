@@ -11,6 +11,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill psss_example
 ExecStartPre=-/usr/bin/docker rm psss_example
 ExecStartPre=/usr/bin/docker pull docker.psi.ch:5000/psss_processing
-ExecStart=/usr/bin/docker run --name psss_example --net=host docker.psi.ch:5000/psss_processing psss_processing tcp://daqsf-sioc-cs-73:9000 SARFE10-PSSS055 --log_level=INFO --auto_start
+ExecStart=/usr/bin/docker run --name psss_example --net=host docker.psi.ch:5000/psss_processing psss_processing tcp://daqsf-sioc-cs-73:9000 -i SARFE10-PSSS055 --log_level=INFO --auto_start
 ExecStop=/usr/bin/docker stop psss_example
 Restart=always

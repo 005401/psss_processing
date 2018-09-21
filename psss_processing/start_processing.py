@@ -37,7 +37,7 @@ def start_processing(input_stream, output_stream_port, rest_api_interface, rest_
 
     try:
         _logger.info("Starting REST interface on interface %s and port %s.", rest_api_interface, rest_api_port)
-        bottle.run(app=app, host=rest_api_interface, port=rest_api_port, debug=True)
+        bottle.run(app=app, host=rest_api_interface, port=rest_api_port)
     finally:
         pass
 

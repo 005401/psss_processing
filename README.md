@@ -85,7 +85,7 @@ roi = [
 client.set_roi(roi)
 ```
 
-### Order of image manipulation
+#### Order of image manipulation
 
 The image is manipulated in the following order:
 

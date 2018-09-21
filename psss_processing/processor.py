@@ -46,7 +46,7 @@ def process_image(image, image_property_name, roi, min_threshold, max_threshold,
     # Make a copy and sent to
     processed_image = manipulate_image(processed_image, roi, min_threshold, max_threshold, rotation)
 
-    processed_data[image_property_name + ".spectrum"] = processed_image.sum(0)
+    processed_data[image_property_name + ".spectrum"] = processed_image.sum(0).astype(dtype="uint32")
 
     return processed_image, processed_data
 

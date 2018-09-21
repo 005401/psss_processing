@@ -94,7 +94,7 @@ class TestClient(unittest.TestCase):
         processed_data = []
 
         with source(host="localhost", port=12000, mode=PULL) as input_stream:
-            for index in range(self.n_images):
+            for index in range(self.n_images-1):
                 processed_data.append(input_stream.receive())
 
         statistics = client.get_statistics()
@@ -169,19 +169,17 @@ class TestClient(unittest.TestCase):
 
         processed_data = []
 
-        with source(host="localhost", port=12000, mode=PULL) as input_stream:
-            for index in range(self.n_images):
-                processed_data.append(input_stream.receive())
+        with source(host="localhost", port=12000, mode=PULL, receive_timeout=100) as input_stream:
+            message = None
+            while message is None:
+                message = input_stream.receive()
 
         client.stop()
 
         spectrum_parameter_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"
 
-        # All the messages should be equal.
-        received_data = processed_data[0]
-
         # If the roi is not set, the value should not be added to the output.
-        self.assertTrue(spectrum_parameter_name in received_data.data.data)
+        self.assertTrue(spectrum_parameter_name in message.data.data)
 
     def test_stop_when_blocking_send(self):
         client = PsssProcessingClient("http://localhost:10000/")

@@ -76,6 +76,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                     statistics["last_sent_pulse_id"] = None
                     statistics["last_sent_time"] = None
                     statistics["last_sent_image"] = None
+                    statistics["last_sent_spectrum"] = None
                     statistics["n_processed_images"] = 0
 
                     image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
@@ -113,6 +114,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                                 statistics["last_sent_pulse_id"] = pulse_id
                                 statistics["last_sent_time"] = str(datetime.datetime.now())
                                 statistics["last_sent_image"] = processed_image
+                                statistics["last_sent_spectrum"] = processed_data[image_property_name + ".spectrum"]
                                 statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
                                 break

@@ -90,6 +90,9 @@ class ProcessingManager(object):
         if "last_sent_image" in result:
             del result["last_sent_image"]
 
+        if "last_sent_spectrum" in result:
+            del result["last_sent_spectrum"]
+
         return result
 
     def get_last_processed_image(self):

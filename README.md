@@ -42,7 +42,48 @@ or by using the provided Python client.
 TODO: Write how to easily do something.
 
 ### Available parameters
-TODO: Write about the parameters that are available to be set.
+
+You can set the following parameters via the **/parameters** rest endpoint:
+
+- **min\_threshold** (Default: 0) If min_threshold>0, each pixel below this value will be set to 0.
+- **max\_threshold** (Default: 0) If max_threshold>0, each pixel above this value will be set to 0.
+- **rotation** (Default: 0) If rotation>0, the image will be rotated for the value in degrees.
+
+Example:
+```python
+from psss_processing import PsssProcessingClient
+
+client = PsssProcessingClient()
+
+parameters = {
+    "min_threshold": 10,
+    "max_threshold": 90,
+    "rotation": 0
+}
+
+client.set_parameters(parameters)
+```
+
+In addition, you can also set the ROI (region of interest) via the **/roi** rest endpoint:
+
+- **\[offset_x, size_x, offset_y, size_y\]** (Default is None)
+
+Example:
+```python
+from psss_processing import PsssProcessingClient
+
+client = PsssProcessingClient()
+
+
+roi = [
+    100,  # offset_x
+    2048, # size_x
+    500,  # offset_y
+    1000  # size_y
+]
+
+client.set_roi(roi)
+```
 
 ### Order of image manipulation
 

@@ -6,12 +6,19 @@ This library is meant to be a stream device for processing images from PSSS came
 ## Currently running
 
 - PSSS processing is running on **sf-daqsync-02**, rest api on port **12000**.
-- Images are taken over from camera SARFE10-PSSS059.
+- Images are taken over from camera SARFE10-PSSS055 (to be renamed to SARFE10-PSSS059).
 - Output stream is available on **tcp://sf-daqsync-02:8889**.
 - PV with the latest spectrum is **SARFE10-PSSS059:SPECTRUM**.
 
 The stream is being sent to the dispatching layer for storage (original image, spectrum, processing parameters), so 
 please do not connect directly to the output stream and request the data from the dispatching layer.
+
+Current processing performance:
+
+- Without rotation: 35Hz
+- With rotation: 1.5Hz
+
+**WARNING**: It is not advisable to use rotation if you need live shot to shot data.
 
 ## Overview
 The service accepts a bsread stream from a camera, it manipulates the picture based on the current settings, 

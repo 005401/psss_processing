@@ -40,7 +40,92 @@ The setting with which to manipulate the image can be set via the REST Api - eit
 or by using the provided Python client.
 
 ### Sample interaction
-TODO: Write how to easily do something.
+
+#### Configuration retrieval
+```python
+from psss_processing import PsssProcessingClient
+
+client = PsssProcessingClient()
+
+# Get the current status of the processing.
+status = client.get_status()
+print(status)
+
+# Retrieve and display current parameters.
+parameters = client.get_parameters()
+print(parameters)
+
+# Retrieve and display the current roi.
+roi = client.get_roi()
+print(roi)
+
+# Get the latest processing statistics.
+statistics = client.get_statistics()
+print(statistics)
+```
+
+#### Set configuration
+In the example below we stop the processing before applying new settings - this is not needed as new settings 
+can be applied without restarting the processing. 
+
+```python
+from psss_processing import PsssProcessingClient
+
+client = PsssProcessingClient()
+
+# Stop the processing. THIS IS NOT NEEDED - just for demonstration.
+client.stop()
+
+parameters = {
+    "min_threshold": 10,
+    "max_threshold": 1200,
+    "rotation": 0
+}
+
+client.set_parameters(parameters)
+
+roi = [
+    100,  # offset_x
+    2048, # size_x
+    500,  # offset_y
+    1000  # size_y
+]
+
+client.set_roi(roi)
+
+# Start the processing.
+client.start()
+```
+
+#### Get last processed image
+There are a lot of methods to retieve the image - below are the most common three.
+
+You can use the Python client:
+```python
+# Download the image
+from psss_processing import PsssProcessingClient
+
+image_file_name = "processed_image.png"
+
+client = PsssProcessingClient()
+client.get_last_processed_image(image_file_name)
+
+# Display the image on screen.
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+image = mpimg.imread(image_file_name)
+image_plot = plt.imshow(image)
+plt.show()
+```
+
+Or you can use curl to retrieve the image:
+```bash
+curl -o processed_image.png http://sf-daqsync-02:12000/image
+```
+Open it in your prefered image viewer.
+
+You can also open the URL **http://sf-daqsync-02:12000/image** directly in your browser.
 
 ### Available parameters
 

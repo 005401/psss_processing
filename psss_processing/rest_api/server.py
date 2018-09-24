@@ -78,12 +78,12 @@ def register_rest_interface(app, instance_manager):
         # Retrieve the last processed image.
         image_raw_bytes = instance_manager.get_last_processed_image()
 
-        if image_raw_bytes is not None:
-            image = get_png_from_image(image_raw_bytes)
-            response.set_header('Content-type', 'image/png')
-            return image
+        if image_raw_bytes is None:
+            raise ValueError("No image was processed yet. Please process at least 1 image before calling this method.")
 
-        return "No image was processed yet. Please process at least 1 image before calling this method."
+        image = get_png_from_image(image_raw_bytes)
+        response.set_header('Content-type', 'image/png')
+        return image
 
     @app.error(405)
     def method_not_allowed(res):

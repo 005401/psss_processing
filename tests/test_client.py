@@ -1,3 +1,4 @@
+import os
 import unittest
 from time import sleep
 
@@ -49,6 +50,9 @@ class TestClient(unittest.TestCase):
 
         if self.processing_process:
             self.processing_process.terminate()
+
+        # if os.path.isfile("ignore_image.png"):
+        #     os.remove("ignore_image.png")
 
         sleep(1)
 
@@ -198,3 +202,19 @@ class TestClient(unittest.TestCase):
         if stop_process.is_alive() and not stop_process.join(timeout=3):
             stop_process.terminate()
             raise ValueError("The stop call is blocked.")
+
+    def test_download_image(self):
+        client = PsssProcessingClient("http://localhost:10000/")
+
+        with self.assertRaisesRegex(ValueError, "No image was processed yet"):
+            client.get_last_processed_image("ignore_image.png")
+
+        client.start()
+
+        sleep(2)
+
+        client.get_last_processed_image("ignore_image.png")
+
+        self.assertTrue(os.path.isfile("ignore_image.png"))
+
+        client.stop()

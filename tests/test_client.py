@@ -51,8 +51,8 @@ class TestClient(unittest.TestCase):
         if self.processing_process:
             self.processing_process.terminate()
 
-        # if os.path.isfile("ignore_image.png"):
-        #     os.remove("ignore_image.png")
+        if os.path.isfile("ignore_image.png"):
+            os.remove("ignore_image.png")
 
         sleep(1)
 

@@ -26,14 +26,15 @@ and calculates the spectrum of the manipulated image. The spectrum, together wit
 parameter are then forwarded to the output stream. The spectrum is also sent to the specified PV.
 
 The names in the output stream are based on the PV name of the incoming camera image. For this documentation we suppose 
-that the camera image PV name is **CAMERA:FPICTURE**.
+that the camera PV prefix is **SARFE10-PSSS055**.
 
 Output stream contains:
-- CAMERA:FPICTURE (The original camera image)
-- CAMERA:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
-- CAMERA:FPICTURE.processing_parameters (The processing parameters used to manipulate the image)
+- SARFE10-PSSS055:FPICTURE (The original camera image)
+- SARFE10-PSSS055:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
+- SARFE10-PSSS055:FPICTURE.processing_parameters (The processing parameters used to manipulate the image)
 
-The manipulated image (rotated and thresholded) is not included in the output stream.
+The manipulated image (rotated and thresholded) is not included in the output stream, but is available for inspection 
+via the /image REST endpoint (returns a PNG image).
 
 The setting with which to manipulate the image can be set via the REST Api - either directly using HTTP calls (curl), 
 or by using the provided Python client.
@@ -206,19 +207,19 @@ class PsssProcessingClient(builtins.object)
 The names of the parameters in the output stream are dependent on the names of the parameters in the input stream.
 The prefix of parameters in the input stream are specified with the **--prefix** argument when running the server.
 
-For this example let's assume that we use **--prefix SLAAR21-LCAM-C561**.
+For this example let's assume that we use **--prefix SARFE10-PSSS055**.
 
-In this case, the server will look for the image in the **SLAAR21-LCAM-C561:FPICTURE** parameter.
+In this case, the server will look for the image in the **SARFE10-PSSS055:FPICTURE** stream channel.
 
 This means that the output stream will have the following parameters:
-- SLAAR21-LCAM-C561:FPICTURE
-- SLAAR21-LCAM-C561:FPICTURE.specturm (X profile of the processed image)
-- SLAAR21-LCAM-C561:FPICTURE.processing_parameters (Parameters used for processing the image)
+- SARFE10-PSSS055:FPICTURE
+- SARFE10-PSSS055:FPICTURE.specturm (X profile of the processed image)
+- SARFE10-PSSS055:FPICTURE.processing_parameters (Parameters used for processing the image)
 
 ### Processing parameters format
 The processing parameters are passed to the output stream as a JSON string. Example:
 ```
-SLAAR21-LCAM-C561:FPICTURE.processing_parameters = 
+SARFE10-PSSS055:FPICTURE.processing_parameters = 
 '{"min_threashold": 0, "max_threashold": 0, "roi": [100, 200, 100, 200]}'
 ```
 

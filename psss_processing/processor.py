@@ -46,12 +46,14 @@ def calculate_summation_matrix(summation_matrix, rotation_angle):
 
 
 @numba.njit(parallel=True)
-def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum):
+def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length):
     min_threshold = int(min_threshold)
     max_threshold = int(max_threshold)
 
     size_y = image.shape[0]
     size_x = image.shape[1]
+
+    spectrum_2d = numpy.zeros(shape=(size_y, spectrum_length), dtype=numpy.uint16)
 
     for y in numba.prange(size_y):
         for x in numba.prange(size_x):
@@ -64,9 +66,9 @@ def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum
                 pixel_value = 0
 
             spectrum_index = summation_matrix[y, x]
-            spectrum[spectrum_index] += pixel_value
+            spectrum_2d[y, spectrum_index] += pixel_value
 
-    return spectrum
+    return spectrum_2d.sum(0).astype(numpy.uint32)
 
 
 def manipulate_image(image, roi, min_threshold, max_threshold, summation_matrix):

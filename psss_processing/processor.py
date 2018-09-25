@@ -45,8 +45,25 @@ def calculate_summation_matrix(summation_matrix, rotation_angle):
     return summation_matrix, sum_length + 1
 
 
+cached_sm_size_x = None
+cached_sm_size_y = None
+cached_sm_rotation = None
+cached_sm = None
+
+
+def get_summation_matrix(size_x, size_y, rotation):
+    global cached_sm_size_x, cached_sm_size_y, cached_sm_rotation, cached_sm
+
+    if size_x == cached_sm_size_x and size_y == cached_sm_size_y and rotation == cached_sm_rotation:
+        return cached_sm
+
+    cached_sm = numpy.zeros(shape=(size_y, size_x), dtype="int16")
+    return calculate_summation_matrix(cached_sm, rotation)
+
+
 @numba.njit(parallel=True)
 def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length):
+
     min_threshold = int(min_threshold)
     max_threshold = int(max_threshold)
 
@@ -71,15 +88,15 @@ def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum
     return spectrum_2d.sum(0).astype(numpy.uint32)
 
 
-def manipulate_image(image, roi, min_threshold, max_threshold, summation_matrix):
+def manipulate_image(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length):
 
     if roi:
         offset_x, size_x, offset_y, size_y = roi
         image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
 
-    get_spectrum(image, min_threshold, max_threshold, summation_matrix)
+    spectrum = get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length)
 
-    return image
+    return spectrum
 
 
 def process_image(image, image_property_name, roi, min_threshold, max_threshold, rotation):
@@ -93,8 +110,11 @@ def process_image(image, image_property_name, roi, min_threshold, max_threshold,
 
     processed_image = numpy.array(image)
 
+    summation_matrix,spectrum_length = get_summation_matrix(size_x, size_y, rotation)
+
     # Make a copy and sent to
-    processed_image = manipulate_image(processed_image, roi, min_threshold, max_threshold, rotation)
+    processed_image = manipulate_image(processed_image, roi, min_threshold, max_threshold,
+                                       summation_matrix, spectrum_length)
 
     processed_data[image_property_name + ".spectrum"] = processed_image.sum(0).astype(dtype="uint32")
 

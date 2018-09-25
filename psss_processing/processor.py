@@ -1,7 +1,9 @@
 import datetime
 import json
+import math
 from logging import getLogger
 
+import numba
 import numpy
 from bsread import source, PULL
 from bsread.sender import sender
@@ -15,19 +17,65 @@ from psss_processing import config
 _logger = getLogger(__name__)
 
 
-def manipulate_image(image, roi, min_threshold, max_threshold, rotation):
-    if min_threshold > 0:
-        image[image < int(min_threshold)] = 0
+@numba.njit(parallel=True)
+def calculate_summation_matrix(summation_matrix, rotation_angle):
 
-    if max_threshold > 0:
-        image[image > int(max_threshold)] = 0
+    size_y, size_x = summation_matrix.shape
+    # Rotation in radians in counter-clockwise direction.
+    radian_angle = math.radians(rotation_angle)
 
-    if rotation != 0:
-        image = ndimage.rotate(image, angle=rotation)
+    cos_angle = math.cos(radian_angle)
+    sin_angle = math.sin(radian_angle)
+
+    min_value = 0
+    max_value = 0
+
+    for y in numba.prange(size_y):
+        for x in numba.prange(size_x):
+            current_pixel_value = round((x * cos_angle) + (y * sin_angle))
+            summation_matrix[y, x] = current_pixel_value
+
+            min_value = min(min_value, current_pixel_value)
+            max_value = max(max_value, current_pixel_value)
+
+    # min_offset cannot be more than 0.
+    summation_matrix -= min_value
+    sum_length = max_value - min_value
+
+    return summation_matrix, sum_length + 1
+
+
+@numba.njit(parallel=True)
+def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum):
+    min_threshold = int(min_threshold)
+    max_threshold = int(max_threshold)
+
+    size_y = image.shape[0]
+    size_x = image.shape[1]
+
+    for y in numba.prange(size_y):
+        for x in numba.prange(size_x):
+            pixel_value = image[y, x]
+
+            if pixel_value < min_threshold:
+                pixel_value = 0
+
+            elif 0 < max_threshold < pixel_value:
+                pixel_value = 0
+
+            spectrum_index = summation_matrix[y, x]
+            spectrum[spectrum_index] += pixel_value
+
+    return spectrum
+
+
+def manipulate_image(image, roi, min_threshold, max_threshold, summation_matrix):
 
     if roi:
         offset_x, size_x, offset_y, size_y = roi
         image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+
+    get_spectrum(image, min_threshold, max_threshold, summation_matrix)
 
     return image
 

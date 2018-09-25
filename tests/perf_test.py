@@ -3,7 +3,7 @@ from time import time
 
 import numpy
 
-from psss_processing.processor import process_image, manipulate_image
+from psss_processing.processor import process_image, get_spectrum, calculate_summation_matrix, get_summation_matrix
 
 
 class ImageProcessingPerformance(unittest.TestCase):
@@ -22,13 +22,14 @@ class ImageProcessingPerformance(unittest.TestCase):
         roi = [100, 1848, 0, 2048]
         min_threshold = 5
         max_threshold = 70
-        rotation = 0
+        rotation = 45
 
         profile = LineProfiler(process_image)
         process_image_wrapper = profile(process_image)
-        profile.add_function(manipulate_image)
+        profile.add_function(get_spectrum)
+        profile.add_function(get_summation_matrix)
 
-        n_iterations = 500
+        n_iterations = 5000
 
         start_time = time()
 

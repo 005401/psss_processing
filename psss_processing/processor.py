@@ -49,20 +49,27 @@ cached_sm_size_x = None
 cached_sm_size_y = None
 cached_sm_rotation = None
 cached_sm = None
+cached_sm_length = None
 
 
-def get_summation_matrix(size_x, size_y, rotation):
-    global cached_sm_size_x, cached_sm_size_y, cached_sm_rotation, cached_sm
+def get_summation_matrix(size_y, size_x, rotation):
+    global cached_sm_size_x, cached_sm_size_y, cached_sm_rotation, cached_sm, cached_sm_length
 
-    if size_x == cached_sm_size_x and size_y == cached_sm_size_y and rotation == cached_sm_rotation:
-        return cached_sm
+    # When any of the parameters do not match we need to re-calculate the rotation matrix.
+    if size_x != cached_sm_size_x or size_y != cached_sm_size_y or rotation != cached_sm_rotation:
 
-    cached_sm = numpy.zeros(shape=(size_y, size_x), dtype="int16")
-    return calculate_summation_matrix(cached_sm, rotation)
+        cached_sm_size_x = size_x
+        cached_sm_size_y = size_y
+        cached_sm_rotation = rotation
+
+        cached_sm, cached_sm_length = calculate_summation_matrix(numpy.zeros(shape=(size_y, size_x), dtype="int16"),
+                                                                 rotation)
+
+    return cached_sm, cached_sm_length
 
 
 @numba.njit(parallel=True)
-def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length):
+def calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length):
 
     min_threshold = int(min_threshold)
     max_threshold = int(max_threshold)
@@ -88,13 +95,13 @@ def get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum
     return spectrum_2d.sum(0).astype(numpy.uint32)
 
 
-def manipulate_image(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length):
+def get_spectrum(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length):
 
     if roi:
         offset_x, size_x, offset_y, size_y = roi
         image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
 
-    spectrum = get_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length)
+    spectrum = calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length)
 
     return spectrum
 
@@ -108,17 +115,16 @@ def process_image(image, image_property_name, roi, min_threshold, max_threshold,
                                                                                  "max_threshold": max_threshold,
                                                                                  "rotation": rotation})
 
-    processed_image = numpy.array(image)
+    size_y = image.shape[0]
+    size_x = image.shape[1]
 
-    summation_matrix,spectrum_length = get_summation_matrix(size_x, size_y, rotation)
+    summation_matrix, spectrum_length = get_summation_matrix(size_y, size_x, rotation)
 
-    # Make a copy and sent to
-    processed_image = manipulate_image(processed_image, roi, min_threshold, max_threshold,
-                                       summation_matrix, spectrum_length)
+    spectrum = get_spectrum(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length)
 
-    processed_data[image_property_name + ".spectrum"] = processed_image.sum(0).astype(dtype="uint32")
+    processed_data[image_property_name + ".spectrum"] = spectrum
 
-    return processed_image, processed_data
+    return processed_data
 
 
 def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,

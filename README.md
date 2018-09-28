@@ -97,36 +97,6 @@ client.set_roi(roi)
 client.start()
 ```
 
-#### Get last processed image
-There are a lot of methods to retieve the image - below are the most common three.
-
-You can use the Python client:
-```python
-# Download the image
-from psss_processing import PsssProcessingClient
-
-image_file_name = "processed_image.png"
-
-client = PsssProcessingClient()
-client.get_last_processed_image(image_file_name)
-
-# Display the image on screen.
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-
-image = mpimg.imread(image_file_name)
-image_plot = plt.imshow(image)
-plt.show()
-```
-
-Or you can use curl to retrieve the image:
-```bash
-curl -o processed_image.png http://sf-daqsync-02:12000/image
-```
-Open it in your prefered image viewer.
-
-You can also open the URL **http://sf-daqsync-02:12000/image** directly in your browser.
-
 ### Available parameters
 
 You can set the following parameters via the **/parameters** rest endpoint:
@@ -227,10 +197,6 @@ All request return a JSON with the following fields:
 * `GET localhost:12000/statistics` - get process statistics.
     - Response specific field: "statistics" - Data about the processing.
     
-* `GET localhost:12000/image` - get the last processed image in PNG format.
-    - This is the image used for the spectrum calculation, not the original image sent in the output stream.
-    
-Getting the image in PNG format can be useful to verify if the threshold values and the rotation are set correctly. 
     
 ### Python client
 The rest API is also wrapped in a Python client. To use it:

@@ -5,6 +5,7 @@ import numpy
 from bsread.sender import sender
 from multiprocessing import Process, Event
 from bsread import source, PULL, json
+from scipy import ndimage
 
 from psss_processing import config
 from psss_processing.processor import get_stream_processor, process_image, calculate_summation_matrix, \
@@ -166,7 +167,40 @@ class TestProcessing(unittest.TestCase):
 
         numpy.testing.assert_array_equal(numpy_spectrum, numba_spectrum)
 
+    def test_fast_vs_normal_image_rotation(self):
 
+        def compare_images(size_x, size_y, rotation_angle, diff_tolerance):
 
-    # if rotation != 0:
-    #     image = ndimage.rotate(image, angle=rotation)
+            image = numpy.zeros(shape=(size_y, size_x), dtype="int32")
+            image[100:1000, 300:500] = 1
+
+            rotated_image_spectrum = ndimage.rotate(image, angle=rotation_angle, order=0).sum(0).astype("uint32")
+            processed_image_spectrum = process_image(image, "", None, 0, 0, rotation_angle)[".spectrum"]
+
+            self.assertTrue(abs(rotated_image_spectrum.shape[0] - processed_image_spectrum.shape[0]) < 2)
+            self.assertTrue(processed_image_spectrum.sum(), 18000)
+
+            self.assertTrue(rotated_image_spectrum.max() < max(size_x, size_y) * 1.5)
+            self.assertTrue(processed_image_spectrum.max() < max(size_x, size_y) * 1.5)
+
+            spectrum_diff = rotated_image_spectrum.astype("int64") - processed_image_spectrum
+
+            self.assertTrue(abs(spectrum_diff.max()) < diff_tolerance)
+            self.assertTrue(abs(spectrum_diff.min()) < diff_tolerance)
+
+            # import matplotlib.pyplot as plt
+            # plt.plot(rotated_image_spectrum)
+            # plt.show()
+            #
+            # plt.plot(processed_image_spectrum)
+            # plt.show()
+
+        test_cases = [
+            # size_x, size_y, rotation_angle, diff_tolerance
+            [1024, 512, 71, 5],
+            [2048, 512, 14, 50],
+            [2048, 2048, 45, 300]
+        ]
+
+        for case in test_cases:
+            compare_images(*case)

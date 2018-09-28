@@ -28,7 +28,10 @@ class ImageProcessingPerformance(unittest.TestCase):
         process_image_wrapper = profile(process_image)
         profile.add_function(get_summation_matrix)
 
-        n_iterations = 5000
+        # Warm-up numba.
+        process_image_wrapper(image, "image", roi, min_threshold, max_threshold, rotation)
+
+        n_iterations = 1000
 
         start_time = time()
 
@@ -41,6 +44,8 @@ class ImageProcessingPerformance(unittest.TestCase):
         rate = n_iterations / time_difference
 
         print("Processing rate: ", rate)
+        print("total_time: ", time_difference)
+        print("n_iterations: ", n_iterations)
 
         profile.print_stats()
 

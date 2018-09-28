@@ -52,9 +52,8 @@ class TestProcessing(unittest.TestCase):
         data_to_send = {pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE: image}
 
         def send_data():
-            with sender(port=10000) as output_stream:
+            with sender(port=10000, queue_size=100) as output_stream:
                 for x in range(n_images):
-                    print("sent", x)
                     output_stream.send(data=data_to_send)
 
         def process_data(event):
@@ -100,8 +99,8 @@ class TestProcessing(unittest.TestCase):
 
         spectrum = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"].value
 
-        self.assertEqual(len(spectrum), 300)
-        self.assertListEqual(list(spectrum), [200] * 300)
+        self.assertEqual(len(spectrum), 200)
+        self.assertListEqual(list(spectrum), [300] * 200)
 
     def test_max_threshold(self):
         image = numpy.zeros(shape=(1024, 512), dtype="uint16")

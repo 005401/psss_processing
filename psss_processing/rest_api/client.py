@@ -106,25 +106,3 @@ class PsssProcessingClient(object):
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=parameters).json()
         return validate_response(server_response)["parameters"]
-
-    def get_last_processed_image(self, output_file):
-        """
-        Download the last processed image to your local drive.
-        :param output_file: Where to save the image.
-        """
-
-        rest_endpoint = "/image"
-        server_response = requests.get(self.api_address_format % rest_endpoint)
-
-        # This should happen only if there is an error.
-        json_object = None
-        try:
-            json_object = server_response.json()
-        except:
-            pass
-
-        if json_object:
-            validate_response(json_object)
-
-        with open(output_file, "wb") as output_file:
-            output_file.write(server_response.content)

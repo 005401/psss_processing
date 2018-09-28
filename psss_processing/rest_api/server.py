@@ -5,7 +5,6 @@ import bottle
 from bottle import request, response
 
 from psss_processing import config
-from psss_processing.utils import get_png_from_image
 
 _logger = logging.getLogger(__name__)
 

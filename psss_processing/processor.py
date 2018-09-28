@@ -129,10 +129,13 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                          input_stream_host, input_stream_port)
 
             _logger.info("Sending out data on stream port %s.", output_stream_port)
-            _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
 
-            epics.ca.clear_cache()
-            output_pv = PV(output_pv_name)
+            if output_pv_name:
+                _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
+                epics.ca.clear_cache()
+                output_pv = PV(output_pv_name)
+            else:
+                _logger.warning("Output EPICS PV not specified. Only bsread will be sent out.")
 
             with source(host=input_stream_host, port=input_stream_port, mode=PULL,
                         queue_size=config.INPUT_STREAM_QUEUE_SIZE,
@@ -187,8 +190,9 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".spectrum"]
                         statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
-                        output_pv.put(processed_data[image_property_name + ".spectrum"])
-                        _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+                        if output_pv_name:
+                            output_pv.put(processed_data[image_property_name + ".spectrum"])
+                            _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

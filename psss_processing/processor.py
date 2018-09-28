@@ -95,18 +95,8 @@ def calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, sp
     return spectrum_2d.sum(0).astype(numpy.uint32)
 
 
-def get_spectrum(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length):
-
-    if roi:
-        offset_x, size_x, offset_y, size_y = roi
-        image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
-
-    spectrum = calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length)
-
-    return spectrum
-
-
 def process_image(image, image_property_name, roi, min_threshold, max_threshold, rotation):
+
     processed_data = dict()
 
     processed_data[image_property_name] = image
@@ -115,12 +105,18 @@ def process_image(image, image_property_name, roi, min_threshold, max_threshold,
                                                                                  "max_threshold": max_threshold,
                                                                                  "rotation": rotation})
 
-    size_y = image.shape[0]
-    size_x = image.shape[1]
+    processing_image = numpy.array(image)
+
+    if roi:
+        offset_x, size_x, offset_y, size_y = roi
+        processing_image = processing_image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+
+    size_y = processing_image.shape[0]
+    size_x = processing_image.shape[1]
 
     summation_matrix, spectrum_length = get_summation_matrix(size_y, size_x, rotation)
 
-    spectrum = get_spectrum(image, roi, min_threshold, max_threshold, summation_matrix, spectrum_length)
+    spectrum = calculate_spectrum(processing_image, min_threshold, max_threshold, summation_matrix, spectrum_length)
 
     processed_data[image_property_name + ".spectrum"] = spectrum
 

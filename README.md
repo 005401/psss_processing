@@ -304,7 +304,6 @@ conda install --use-local psss_processing
 ### Requirements
 The library relies on the following packages:
 
-- cam_server
 - scipy
 - pyepics
 - bottle

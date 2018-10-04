@@ -14,14 +14,12 @@ requirements:
 
     run:
         - python
-        - cam_server
         - scipy
         - pyepics
         - bottle
         - bsread >=1.2.0
         - requests
-        - matplotlib
-        - pillow
+        - numba
 
 
 build:

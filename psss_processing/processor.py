@@ -80,10 +80,10 @@ def calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, sp
             pixel_value = image[y, x]
 
             if pixel_value < min_threshold:
-                continue
+                pixel_value = 0
 
             elif 0 < max_threshold < pixel_value:
-                continue
+                pixel_value = 0
 
             spectrum_index = summation_matrix[y, x]
             spectrum_2d[y, spectrum_index] += pixel_value

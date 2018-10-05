@@ -33,8 +33,7 @@ Output stream contains:
 - SARFE10-PSSS055:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
 - SARFE10-PSSS055:FPICTURE.processing_parameters (The processing parameters used to manipulate the image)
 
-The manipulated image (rotated and thresholded) is not included in the output stream, but is available for inspection 
-via the /image REST endpoint (returns a PNG image).
+The manipulated image (rotated and thresholded) is not included in the output stream.
 
 The setting with which to manipulate the image can be set via the REST Api - either directly using HTTP calls (curl), 
 or by using the provided Python client.
@@ -145,10 +144,10 @@ client.set_roi(roi)
 
 The image is manipulated in the following order:
 
+- Apply the **roi** to the received image.
 - Apply **min\_threshold** (Every pixel below this value is set to 0)
 - Apply **max\_threshold** (Every pixel above this value is set to 0)
 - Rotate the image for the **rotation** angle in degrees
-- Apply the **roi** to the rotated image.
 
 After the roi has been applied, we proceed to calculate the spectrum of the new image.
 

@@ -6,19 +6,17 @@ This library is meant to be a stream device for processing images from PSSS came
 ## Currently running
 
 - PSSS processing is running on **sf-daqsync-02**, rest api on port **12000**.
-- Images are taken over from camera SARFE10-PSSS055 (to be renamed to SARFE10-PSSS059).
+- Images are taken over from camera SARFE10-PSSS059 (to be renamed to SARFE10-PSSS059).
 - Output stream is available on **tcp://sf-daqsync-02:8889**.
 - PV with the latest spectrum is **SARFE10-PSSS059:SPECTRUM**.
 
 The stream is being sent to the dispatching layer for storage (original image, spectrum, processing parameters), so 
 please do not connect directly to the output stream and request the data from the dispatching layer.
 
-Current processing performance:
+Current processing performance: 115Hz (all features turned on).
 
-- Without rotation: 35Hz
-- With rotation: 1.5Hz
-
-**WARNING**: It is not advisable to use rotation if you need live shot to shot data.
+**WARNING**: To achieve this numbers rotation is done without interpolation. It is good for small angles, but when 
+large angles are used, the spectrum would need to be smoothed out before used.
 
 ## Overview
 The service accepts a bsread stream from a camera, it manipulates the picture based on the current settings, 
@@ -26,12 +24,12 @@ and calculates the spectrum of the manipulated image. The spectrum, together wit
 parameter are then forwarded to the output stream. The spectrum is also sent to the specified PV.
 
 The names in the output stream are based on the PV name of the incoming camera image. For this documentation we suppose 
-that the camera PV prefix is **SARFE10-PSSS055**.
+that the camera PV prefix is **SARFE10-PSSS059**.
 
 Output stream contains:
-- SARFE10-PSSS055:FPICTURE (The original camera image)
-- SARFE10-PSSS055:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
-- SARFE10-PSSS055:FPICTURE.processing_parameters (The processing parameters used to manipulate the image)
+- SARFE10-PSSS059:FPICTURE (The original camera image)
+- SARFE10-PSSS059:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
+- SARFE10-PSSS059:FPICTURE.processing_parameters (The processing parameters used to manipulate the image)
 
 The manipulated image (rotated and thresholded) is not included in the output stream.
 
@@ -144,10 +142,10 @@ client.set_roi(roi)
 
 The image is manipulated in the following order:
 
-- Apply the **roi** to the received image.
+- Apply the **roi** to the received image. 
 - Apply **min\_threshold** (Every pixel below this value is set to 0)
 - Apply **max\_threshold** (Every pixel above this value is set to 0)
-- Rotate the image for the **rotation** angle in degrees
+- Rotate the image for the **rotation** angle in degrees. No interpolation is done for performance reasons.
 
 After the roi has been applied, we proceed to calculate the spectrum of the new image.
 
@@ -257,19 +255,19 @@ class PsssProcessingClient(builtins.object)
 The names of the parameters in the output stream are dependent on the names of the parameters in the input stream.
 The prefix of parameters in the input stream are specified with the **--prefix** argument when running the server.
 
-For this example let's assume that we use **--prefix SARFE10-PSSS055**.
+For this example let's assume that we use **--prefix SARFE10-PSSS059**.
 
-In this case, the server will look for the image in the **SARFE10-PSSS055:FPICTURE** stream channel.
+In this case, the server will look for the image in the **SARFE10-PSSS059:FPICTURE** stream channel.
 
 This means that the output stream will have the following parameters:
-- SARFE10-PSSS055:FPICTURE
-- SARFE10-PSSS055:FPICTURE.specturm (X profile of the processed image)
-- SARFE10-PSSS055:FPICTURE.processing_parameters (Parameters used for processing the image)
+- SARFE10-PSSS059:FPICTURE
+- SARFE10-PSSS059:FPICTURE.specturm (X profile of the processed image)
+- SARFE10-PSSS059:FPICTURE.processing_parameters (Parameters used for processing the image)
 
 ### Processing parameters format
 The processing parameters are passed to the output stream as a JSON string. Example:
 ```
-SARFE10-PSSS055:FPICTURE.processing_parameters = 
+SARFE10-PSSS059:FPICTURE.processing_parameters = 
 '{"min_threashold": 0, "max_threashold": 0, "roi": [100, 200, 100, 200]}'
 ```
 
@@ -303,12 +301,12 @@ conda install --use-local psss_processing
 ### Requirements
 The library relies on the following packages:
 
+- python
 - pyepics
 - bottle
 - bsread >=1.2.0
 - requests
-- matplotlib
-- pillow
+- numba
 
 In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to 
 your conda config:

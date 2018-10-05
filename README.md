@@ -304,7 +304,6 @@ conda install --use-local psss_processing
 ### Requirements
 The library relies on the following packages:
 
-- scipy
 - pyepics
 - bottle
 - bsread >=1.2.0

@@ -7,7 +7,6 @@ import numba
 import numpy
 from bsread import source, PULL
 from bsread.sender import sender
-from scipy import ndimage
 from zmq import Again
 import epics
 from epics import PV

@@ -18,6 +18,8 @@ requirements:
         - bottle
         - bsread >=1.2.0
         - requests
+        - numpy
+        - scipy
         - numba
 
 

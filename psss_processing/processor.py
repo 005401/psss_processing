@@ -1,126 +1,70 @@
 import datetime
 import json
 import math
-from logging import getLogger
+import logging
 
-import numba
 import numpy
+import scipy.signal
+import zmq
+import epics
+
 from bsread import source, PULL
 from bsread.sender import sender
-from zmq import Again
-import epics
-from epics import PV
 
-from psss_processing import config
+from psss_processing import config, functions
 
-_logger = getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-@numba.njit(parallel=True)
-def calculate_summation_matrix(summation_matrix, rotation_angle):
-    size_y, size_x = summation_matrix.shape
-    # Rotation in radians in counter-clockwise direction.
-    radian_angle = math.radians(rotation_angle)
-
-    cos_angle = math.cos(radian_angle)
-    sin_angle = math.sin(radian_angle)
-
-    min_value = 0
-    max_value = 0
-
-    for y in numba.prange(size_y):
-        for x in numba.prange(size_x):
-            current_pixel_value = round((x * cos_angle) + (y * sin_angle))
-            summation_matrix[y, x] = current_pixel_value
-
-            min_value = min(min_value, current_pixel_value)
-            max_value = max(max_value, current_pixel_value)
-
-    # min_offset cannot be more than 0.
-    summation_matrix -= min_value
-    sum_length = max_value - min_value
-
-    return summation_matrix, sum_length + 1
-
-
-cached_sm_size_x = None
-cached_sm_size_y = None
-cached_sm_rotation = None
-cached_sm = None
-cached_sm_length = None
-
-
-def get_summation_matrix(size_y, size_x, rotation):
-    global cached_sm_size_x, cached_sm_size_y, cached_sm_rotation, cached_sm, cached_sm_length
-
-    # When any of the parameters do not match we need to re-calculate the rotation matrix.
-    if size_x != cached_sm_size_x or size_y != cached_sm_size_y or rotation != cached_sm_rotation:
-        cached_sm_size_x = size_x
-        cached_sm_size_y = size_y
-        cached_sm_rotation = rotation
-
-        cached_sm, cached_sm_length = calculate_summation_matrix(numpy.zeros(shape=(size_y, size_x), dtype="int16"),
-                                                                 rotation)
-
-    return cached_sm, cached_sm_length
-
-
-@numba.njit(parallel=True)
-def calculate_spectrum(image, min_threshold, max_threshold, summation_matrix, spectrum_length):
-    min_threshold = int(min_threshold)
-    max_threshold = int(max_threshold)
-
-    size_y = image.shape[0]
-    size_x = image.shape[1]
-
-    spectrum_2d = numpy.zeros(shape=(size_y, spectrum_length), dtype=numpy.uint16)
-
-    for y in numba.prange(size_y):
-        for x in numba.prange(size_x):
-            pixel_value = image[y, x]
-
-            if pixel_value < min_threshold:
-                pixel_value = 0
-
-            elif 0 < max_threshold < pixel_value:
-                pixel_value = 0
-
-            spectrum_index = summation_matrix[y, x]
-            spectrum_2d[y, spectrum_index] += pixel_value
-
-    return spectrum_2d.sum(0).astype(numpy.uint32)
-
-
-def process_image(image, image_property_name, roi, min_threshold, max_threshold, rotation):
+def process_image(image, axis, image_property_name, roi, parameters):
     processed_data = dict()
 
     processed_data[image_property_name] = image
     processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi": roi,
-                                                                                 "min_threshold": min_threshold,
-                                                                                 "max_threshold": max_threshold,
-                                                                                 "rotation": rotation})
+                                                                                 "background": parameters['background']})
+    processing_image = image
+    # validate background data
+    background_image = parameters.get('background_data')
+    if isinstance(background_image, numpy.ndarray):
+        if background_image.shape != processing_image.shape:
+            background_image = None
+    else:
+        background_image = None
+    
+    # crop the image in y direction
+    ymin, ymax = roi
+    if processing_image.shape[0] > ymax > ymin > 0:
+        processing_image = processing_image[ymin:ymax, :]
+        if background_image is not None:
+            background_image = background_image[ymin:ymax, :]
 
-    processing_image = numpy.array(image)
+    # remove the background and collapse in y direction to get the spectrum
+    if background_image is not None:
+        spectrum = functions.get_spectrum(processing_image, background_image)
+    else:
+        spectrum = processing_image.sum(0, 'uint32')
+ 
+    # smooth the spectrum with savgol filter with 51 window size and 3rd order polynomial
+    smoothed_spectrum = scipy.signal.savgol_filter(spectrum, 51, 3)
 
-    if roi:
-        offset_x, size_x, offset_y, size_y = roi
-        processing_image = processing_image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+    # gaussian fitting
+    if axis is None:
+        axis = numpy.arange(len(spectrum), dtype=numpy.float64)
 
-    size_y = processing_image.shape[0]
-    size_x = processing_image.shape[1]
+    offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2])
 
-    summation_matrix, spectrum_length = get_summation_matrix(size_y, size_x, rotation)
-
-    spectrum = calculate_spectrum(processing_image, min_threshold, max_threshold, summation_matrix, spectrum_length)
-
+    # outputs
     processed_data[image_property_name + ".spectrum"] = spectrum
+    processed_data[image_property_name + ".energy"] = axis
+    processed_data[image_property_name + ".center"] = center
+    processed_data[image_property_name + ".fwhm"] = 2.355 * sigma
 
     return processed_data
 
 
 def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
-                         output_pv_name):
-    def stream_processor(running_flag, roi, parameters, statistics):
+                         output_pv_name, ymin_pv_name, ymax_pv_name, axis_pv_name):
+    def stream_processor(running_flag, parameters, statistics):
         try:
             running_flag.set()
 
@@ -132,9 +76,22 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
             if output_pv_name:
                 _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
                 epics.ca.clear_cache()
-                output_pv = PV(output_pv_name)
+                output_pv = epics.PV(output_pv_name)
             else:
                 _logger.warning("Output EPICS PV not specified. Only bsread will be sent out.")
+
+            # EPICS PV for vertical ROI
+            if ymin_pv_name:
+                ymin_pv = epics.PV(ymin_pv_name)
+                ymin_pv.wait_for_connection()
+            if ymax_pv_name:
+                ymax_pv = epics.PV(ymax_pv_name)
+                ymax_pv.wait_for_connection()
+            if axis_pv_name:
+                axis_pv = epics.PV(axis_pv_name)
+                axis_pv.wait_for_connection()
+
+            roi = [0, 0]
 
             with source(host=input_stream_host, port=input_stream_port, mode=PULL,
                         queue_size=config.INPUT_STREAM_QUEUE_SIZE,
@@ -167,12 +124,20 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         image_to_process = message.data.data[image_property_name].value
 
+                        if ymin_pv_name and ymin_pv.connected:
+                            roi[0] = ymin_pv.value
+                        if ymax_pv_name and ymax_pv.connected:
+                            roi[1] = ymax_pv.value
+                        if axis_pv_name and axis_pv.connected:
+                            axis = axis_pv.value
+                        else:
+                            axis = None
+
                         processed_data = process_image(image_to_process,
+                                                       axis,
                                                        image_property_name,
                                                        roi,
-                                                       parameters["min_threshold"],
-                                                       parameters["max_threshold"],
-                                                       parameters["rotation"])
+                                                       parameters)
 
                         try:
                             output_stream.send(pulse_id=pulse_id,
@@ -183,7 +148,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                             statistics["last_sent_pulse_id"] = pulse_id
                             statistics["last_sent_time"] = str(datetime.datetime.now())
-                        except Again:
+                        except zmq.Again:
                             pass
 
                         statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".spectrum"]

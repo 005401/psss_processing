@@ -2,9 +2,9 @@ import unittest
 from time import time
 
 import numpy
+import psss_processing.processor as processor
 
-from psss_processing.processor import process_image, get_summation_matrix
-
+import h5py
 
 class ImageProcessingPerformance(unittest.TestCase):
 
@@ -17,26 +17,34 @@ class ImageProcessingPerformance(unittest.TestCase):
             print("Please install the 'line_profiler' module first.")
             return
 
-        image = (numpy.random.rand(2048, 2048) * 100).astype(dtype="uint16")
+        #image = (numpy.random.rand(2016, 2560) * 200).astype(dtype="uint16")
+        #background_image = (numpy.random.rand(2016, 2560) * 10).astype(dtype="uint16")
+        f = h5py.File('/afs/psi.ch/user/w/wang_x1/background.h5')
+        background_image = f['/image'].value
 
-        roi = [100, 1848, 0, 2048]
-        min_threshold = 5
-        max_threshold = 70
-        rotation = 45
+        images = []
+        for i in range(50):
+            images.append(h5py.File('/afs/psi.ch/user/w/wang_x1/%d.h5'%i)['/image'].value)
 
-        profile = LineProfiler(process_image)
-        process_image_wrapper = profile(process_image)
-        profile.add_function(get_summation_matrix)
+        image = images[0]
+
+        roi = [900, 1600]
+        axis = numpy.linspace(9100, 9200, image.shape[1])
+        parameters = {"background": "in_memory", "background_data": background_image}
+
+        profile = LineProfiler(processor.process_image)
+        process_image_wrapper = profile(processor.process_image)
 
         # Warm-up numba.
-        process_image_wrapper(image, "image", roi, min_threshold, max_threshold, rotation)
+        process_image_wrapper(image, axis, "image", roi, parameters)
 
         n_iterations = 1000
 
         start_time = time()
 
-        for _ in range(n_iterations):
-            process_image_wrapper(image, "image", roi, min_threshold, max_threshold, rotation)
+        for i in range(n_iterations):
+            image = images[i%len(images)]
+            process_image_wrapper(image, axis, "image", roi, parameters)
 
         end_time = time()
 

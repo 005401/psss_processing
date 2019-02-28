@@ -5,29 +5,30 @@ import scipy.optimize
 
 
 @numba.njit(parallel=True)
-def remove_background(image, background):
+def get_spectrum(image, background):
     y = image.shape[0]
     x = image.shape[1]
-    
+
+    profile = numpy.zeros(x, dtype=numpy.uint32)
+
     for i in numba.prange(y):
         for j in range(x):
             v = image[i,j]
             b = background[i,j]
-
             if v > b:
                 v -= b
             else:
                 v = 0
 
-            image[i,j] = v
+            profile[j] += v
+
+    return profile
 
 
-@numba.vectorize([numba.float64(numba.float64,numba.float64,numba.float64,numba.float64,numba.float64)], nopython=True)
 def _gauss_function(x, offset, amplitude, center, standard_deviation):
-    return offset + amplitude * math.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2))
+    return offset + amplitude * numpy.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2))
 
 
-@numba.njit
 def _gauss_deriv(x, offset, amplitude, center, standard_deviation):
     fac = numpy.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2))
 
@@ -52,7 +53,7 @@ def gauss_fit(profile, axis, **kwargs):
     maxfev = kwargs.get('maxfev', 100) # the default is 100 * (N + 1), which is over killing
     try:
         optimal_parameter, _ = scipy.optimize.curve_fit(
-                _gauss_function, axis, profile.astype("float32"),
+                _gauss_function, axis, profile.astype("float64"),
                 p0=[offset, amplitude, center, standard_deviation],
                 jac=_gauss_deriv,
                 col_deriv=1,

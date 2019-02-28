@@ -28,6 +28,7 @@ class PsssProcessingClient(object):
     def start(self):
         """
         Start the processing.
+
         :return: Server status.
         """
         rest_endpoint = "/start"
@@ -38,6 +39,7 @@ class PsssProcessingClient(object):
     def stop(self):
         """
         Stop the processing.
+
         :return: Server status.
         """
         rest_endpoint = "/stop"
@@ -48,6 +50,7 @@ class PsssProcessingClient(object):
     def get_status(self):
         """
         Get the status of the processing.
+
         :return: Server status.
         """
         rest_endpoint = "/status"
@@ -58,6 +61,7 @@ class PsssProcessingClient(object):
     def get_statistics(self):
         """
         Get the statistics of the processing.
+
         :return: Server statistics.
         """
         rest_endpoint = "/statistics"
@@ -65,30 +69,10 @@ class PsssProcessingClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["statistics"]
 
-    def get_roi(self):
-        """
-        Get the ROI.
-        :return: ROI as a list.
-        """
-        rest_endpoint = "/roi"
-
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["roi"]
-
-    def set_roi(self, roi):
-        """
-        Set the ROI.
-        :param roi: List of 4 elements: [offset_x, size_x, offset_y, size_y] or [] or None.
-        :return: ROI as a list.
-        """
-        rest_endpoint = "/roi"
-
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=roi).json()
-        return validate_response(server_response)["roi"]
-
     def get_parameters(self):
         """
         Get the processing parameters
+
         :return: Processing parameters as a dictionary.
         """
         rest_endpoint = "/parameters"
@@ -99,6 +83,7 @@ class PsssProcessingClient(object):
     def set_parameters(self, parameters):
         """
         Set the processing parameters
+
         :param parameters: Dictionary with 3 elements: min_threshold, max_threshold, rotation
         :return: Set parameters.
         """
@@ -106,3 +91,23 @@ class PsssProcessingClient(object):
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=parameters).json()
         return validate_response(server_response)["parameters"]
+
+    def set_background(self, filename='', data=None):
+        """
+        Set the background image. If no arguments are provided, the background image is cleared.
+
+        :param str filename: background image filename. It is used merely to track where 
+                             the background image is loaded.
+        :param ndarray data: background image data.
+        """
+        rest_endpoint = "/background"
+
+        if data is not None:
+            data = data.tolist()
+
+        parameters = {
+            "filename": filename,
+            "data": data
+        }
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=parameters).json()
+        return validate_response(server_response)["state"]

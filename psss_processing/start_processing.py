@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 def start_processing(input_stream, output_stream_port, rest_api_interface, rest_api_port,
-                     epics_pv_name_prefix, output_pv, ymin_pv, ymax_pv, axis_pv, auto_start):
+                     epics_pv_name_prefix, output_pv, center_pv, fwhm_pv, ymin_pv, ymax_pv, axis_pv, auto_start):
 
     _logger.info("Receiving data from %s and outputting results on port %s.", input_stream, output_stream_port)
     _logger.info("Looking for image with Epics PV name prefix '%s'.", epics_pv_name_prefix)
@@ -50,6 +50,8 @@ def main():
     parser.add_argument('input_stream', help="Input bsread stream to process.")
     parser.add_argument("-i", '--prefix', default=config.DEFAULT_INPUT_PV, help="Epics PV prefix of the image.")
     parser.add_argument('-p', '--output_pv', default=config.DEFAULT_OUTPUT_PV, help="Epics PV to send the spectrum to.")
+    parser.add_argument('--center_pv', default=config.DEFAULT_CENTER_PV, help="Epics PV to send spectrum center.")
+    parser.add_argument('--fwhm_pv', default=config.DEFAULT_FWHM_PV, help="Epics PV to send spectrum fwhm`.")
     parser.add_argument('--ymin_pv', default=config.DEFAULT_YMIN_PV, help="Epics PV to get y ROI start.")
     parser.add_argument('--ymax_pv', default=config.DEFAULT_YMAX_PV, help="Epics PV to get y ROI end.")
     parser.add_argument('--axis_pv', default=config.DEFAULT_AXIS_PV, help="Epics PV to get energy axis.")
@@ -75,6 +77,8 @@ def main():
                      rest_api_port=arguments.rest_api_port,
                      epics_pv_name_prefix=arguments.prefix,
                      output_pv=arguments.output_pv,
+                     center_pv=arguments.center_pv,
+                     fwhm_pv=arguments.fwhm_pv,
                      ymin_pv=arguments.ymin_pv,
                      ymax_pv=arguments.ymax_pv,
                      axis_pv=arguments.axis_pv,

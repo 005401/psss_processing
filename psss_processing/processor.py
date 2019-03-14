@@ -1,6 +1,5 @@
 import datetime
 import json
-import math
 import logging
 
 import numpy
@@ -30,7 +29,7 @@ def process_image(image, axis, image_property_name, roi, parameters):
             background_image = None
     else:
         background_image = None
-    
+
     # crop the image in y direction
     ymin, ymax = roi
     if processing_image.shape[0] > ymax > ymin > 0:
@@ -43,7 +42,7 @@ def process_image(image, axis, image_property_name, roi, parameters):
         spectrum = functions.get_spectrum(processing_image, background_image)
     else:
         spectrum = processing_image.sum(0, 'uint32')
- 
+
     # smooth the spectrum with savgol filter with 51 window size and 3rd order polynomial
     smoothed_spectrum = scipy.signal.savgol_filter(spectrum, 51, 3)
 
@@ -63,7 +62,7 @@ def process_image(image, axis, image_property_name, roi, parameters):
 
 
 def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
-                         output_pv_name, ymin_pv_name, ymax_pv_name, axis_pv_name):
+                         output_pv_name, center_pv_name, fwhm_pv_name, ymin_pv_name, ymax_pv_name, axis_pv_name):
     def stream_processor(running_flag, parameters, statistics):
         try:
             running_flag.set()
@@ -74,12 +73,23 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
             _logger.info("Sending out data on stream port %s.", output_stream_port)
 
             if output_pv_name:
-                _logger.info("Sending out data on EPICS PV %s.", output_pv_name)
+                _logger.info("Sending out spectrum data on EPICS PV %s.", output_pv_name)
                 epics.ca.clear_cache()
                 output_pv = epics.PV(output_pv_name)
             else:
                 _logger.warning("Output EPICS PV not specified. Only bsread will be sent out.")
 
+            if center_pv_name:
+                _logger.info("Sending out spectrum center on EPICS PV %s.", center_pv_name)
+                center_pv = epics.PV(center_pv_name)
+            else:
+                _logger.warning("Output EPICS PV not specified. Only bsread will be sent out.")
+
+            if fwhm_pv_name:
+                _logger.info("Sending out spectrum fwhm on EPICS PV %s.", fwhm_pv_name)
+                fwhm_pv = epics.PV(fwhm_pv_name)
+            else:
+                _logger.warning("Output EPICS PV not specified. Only bsread will be sent out.")
             # EPICS PV for vertical ROI
             if ymin_pv_name:
                 ymin_pv = epics.PV(ymin_pv_name)
@@ -154,9 +164,15 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".spectrum"]
                         statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
-                        if output_pv_name:
+                        if output_pv_name and output_pv.connected:
                             output_pv.put(processed_data[image_property_name + ".spectrum"])
                             _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+
+                        if center_pv_name and center_pv.connected:
+                            center_pv.put(processed_data[image_property_name + ".center"])
+
+                        if fwhm_pv_name and fwhm_pv.connected:
+                            fwhm_pv.put(processed_data[image_property_name + ".fwhm"])
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

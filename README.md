@@ -61,7 +61,7 @@ from psss_processing import PsssProcessingClient
 client = PsssProcessingClient()
 
 # Stop the processing
-client.start()
+client.stop()
 
 # Read background image from an HDF5 file
 filename = 'background_20190203_141516.h5'

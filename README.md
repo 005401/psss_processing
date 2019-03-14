@@ -8,8 +8,12 @@ This library is meant to be a stream device for processing images from PSSS came
 - PSSS processing is running on **sf-daqsync-02**, rest api on port **12000**.
 - Images are taken over from camera SARFE10-PSSS059 (to be renamed to SARFE10-PSSS059).
 - Output stream is available on **tcp://sf-daqsync-02:8889**.
-- PV with the latest spectrum is **SARFE10-PSSS059:SPECTRUM**.
-
+- Vertical ROI definition is from PV **SARFE10-PSSS059:SPC_ROI_YMIN** and **SARFE10-PSSS059:SPC_ROI_YMAX**.
+- Spectrum energy axis is from PV **SARFE10-PSSS059:SPECTRUM_X**.
+- PV with the latest spectrum is **SARFE10-PSSS059:SPECTRUM_Y**.
+- PV with the latest spectrum center is **SARFE10-PSSS059:SPECTRUM_CENTER**.
+- PV with the latest spectrum FWHM is **SARFE10-PSSS059:SPECTRUM_FWHM**.
+ 
 The stream is being sent to the dispatching layer for storage (original image, spectrum, processing parameters), so 
 please do not connect directly to the output stream and request the data from the dispatching layer.
 

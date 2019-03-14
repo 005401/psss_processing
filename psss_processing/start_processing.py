@@ -26,6 +26,8 @@ def start_processing(input_stream, output_stream_port, rest_api_interface, rest_
                                             output_stream_port=output_stream_port,
                                             epics_pv_name_prefix=epics_pv_name_prefix,
                                             output_pv_name=output_pv,
+                                            center_pv_name=center_pv,
+                                            fwhm_pv_name=fwhm_pv,
                                             ymin_pv_name=ymin_pv,
                                             ymax_pv_name=ymax_pv,
                                             axis_pv_name=axis_pv)

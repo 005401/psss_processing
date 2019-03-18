@@ -47,9 +47,6 @@ def process_image(image, axis, image_property_name, roi, parameters):
     smoothed_spectrum = scipy.signal.savgol_filter(spectrum, 51, 3)
 
     # gaussian fitting
-    if axis is None:
-        axis = numpy.arange(len(spectrum), dtype=numpy.float64)
-
     offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2])
 
     # outputs
@@ -142,6 +139,10 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                             axis = axis_pv.value
                         else:
                             axis = None
+
+                        if axis is None or len(axis) != image_to_process.shape[1]:
+                            _logger.warn("Invalid energy axis")
+                            continue
 
                         processed_data = process_image(image_to_process,
                                                        axis,

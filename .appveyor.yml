@@ -22,14 +22,14 @@ environment:
 build: false
 
 install:
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - "%MINICONDA%\\Scripts\\activate.bat"
   - conda config --set always_yes yes --set changeps1 no
   - conda config --add channels defaults
   - conda config --add channels paulscherrerinstitute
-  - conda update -q --all
+  - if not %PYTHON_VERSION% == 3.5 (conda update -q --all)
   - conda install conda-build numpy anaconda-client
   # build
   - conda build --skip-existing conda-recipe
 
 on_success:
-  - anaconda -t %CONDA_TOKEN% upload %MINICONDA%\\conda-bld\\win-%PYTHON_ARCH%\\*.tar.bz2
+  - if %APPVEYOR_REPO_TAG% == true (anaconda -t %CONDA_TOKEN% upload %MINICONDA%\\conda-bld\\win-%PYTHON_ARCH%\\*.tar.bz2)

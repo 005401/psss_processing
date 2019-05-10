@@ -37,6 +37,9 @@ class TestClient(unittest.TestCase):
                              rest_api_port=10000,
                              epics_pv_name_prefix=self.pv_name_prefix,
                              output_pv=None,
+                             ymin_pv=None,
+                             ymax_pv=None,
+                             axis_pv=None,
                              auto_start=False)
 
         self.sending_process = Process(target=send_data)
@@ -68,24 +71,10 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(client.get_status(), "stopped")
 
-        self.assertListEqual(client.get_roi(), [])
         self.assertDictEqual(client.get_parameters(), config.DEFAULT_PARAMETERS)
 
-        client.set_roi(None)
-        self.assertListEqual(client.get_roi(), [])
-
-        with self.assertRaisesRegex(ValueError, "ROI offsets"):
-            client.set_roi([-1, -1, -1, -1])
-
-        roi = [0, 1024, 0, 1024]
-        client.set_roi(roi)
-        self.assertListEqual(client.get_roi(), roi)
-
-        parameters = {"min_threshold": 10,
-                      "max_threshold": 0,
-                      "rotation": 45}
-        client.set_parameters(parameters)
-        self.assertDictEqual(client.get_parameters(), parameters)
+        client.set_background()
+        self.assertDictEqual(client.get_parameters(), {"background": ""})
 
         self.assertDictEqual(client.get_statistics(), {})
 
@@ -127,68 +116,6 @@ class TestClient(unittest.TestCase):
 
         client.stop()
         self.assertEqual(client.get_status(), "stopped")
-
-    def test_change_roi_while_running(self):
-        client = PsssProcessingClient("http://localhost:10000/")
-
-        roi = [0, 1024, 0, 1024]
-        client.set_roi(roi)
-
-        processed_data = []
-
-        client.start()
-
-        with source(host="localhost", port=12000, mode=PULL) as input_stream:
-            # First pulse_id comes before the source connects.
-            for index in range(self.n_images-1):
-                message = input_stream.receive()
-                processed_data.append(message)
-
-        updated_roi = [100, 200, 100, 200]
-        client.set_roi(updated_roi)
-
-        data_to_send = {self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE: self.image}
-
-        with sender(port=10001) as output_stream:
-            for x in range(self.n_images):
-                output_stream.send(data=data_to_send)
-
-        with source(host="localhost", port=12000, mode=PULL) as input_stream:
-            for index in range(self.n_images):
-                message = input_stream.receive()
-                processed_data.append(message)
-
-        client.stop()
-
-        processing_parameters_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".processing_parameters"
-
-        start_processing_parameters = json.loads(processed_data[0].data.data[processing_parameters_name].value)
-        end_processing_parameters = json.loads(processed_data[8].data.data[processing_parameters_name].value)
-
-        self.assertListEqual(roi, start_processing_parameters["roi"])
-        self.assertListEqual(updated_roi, end_processing_parameters["roi"])
-
-    def test_no_roi(self):
-        client = PsssProcessingClient("http://localhost:10000/")
-
-        roi = []
-        client.set_roi(roi)
-
-        client.start()
-
-        processed_data = []
-
-        with source(host="localhost", port=12000, mode=PULL, receive_timeout=100) as input_stream:
-            message = None
-            while message is None:
-                message = input_stream.receive()
-
-        client.stop()
-
-        spectrum_parameter_name = self.pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"
-
-        # If the roi is not set, the value should not be added to the output.
-        self.assertTrue(spectrum_parameter_name in message.data.data)
 
     def test_stop_when_blocking_send(self):
         client = PsssProcessingClient("http://localhost:10000/")

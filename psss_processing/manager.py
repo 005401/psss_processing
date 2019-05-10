@@ -5,21 +5,16 @@ from logging import getLogger
 from copy import deepcopy
 
 from psss_processing import config
-from psss_processing.utils import validate_roi
 
 _logger = getLogger(__name__)
 
 
 class ProcessingManager(object):
 
-    def __init__(self, stream_processor, roi=None, parameters=None, auto_start=False):
+    def __init__(self, stream_processor, parameters=None, auto_start=False):
 
         self.stream_processor = stream_processor
         self.auto_start = auto_start
-
-        if roi is None:
-            roi = config.DEFAULT_ROI
-        self.roi = roi
 
         if parameters is None:
             parameters = config.DEFAULT_PARAMETERS
@@ -42,7 +37,7 @@ class ProcessingManager(object):
         self.running_flag = Event()
 
         self.processing_thread = Thread(target=self.stream_processor,
-                                        args=(self.running_flag, self.roi, self.parameters, self.statistics))
+                                        args=(self.running_flag, self.parameters, self.statistics))
 
         self.processing_thread.start()
 
@@ -60,26 +55,8 @@ class ProcessingManager(object):
         self.processing_thread = None
         self.running_flag = None
 
-    def set_roi(self, roi):
-
-        if not roi:
-            roi = []
-
-        validate_roi(roi)
-
-        _logger.info("Setting ROI to %s.", roi)
-
-        self.roi.clear()
-        self.roi.extend(roi)
-
     def set_parameters(self, parameters):
-
-        self.parameters["min_threshold"] = parameters.get("min_threshold", 0)
-        self.parameters["max_threshold"] = parameters.get("max_threshold", 0)
-        self.parameters["rotation"] = parameters.get("rotation", 0)
-
-    def get_roi(self):
-        return self.roi
+        self.parameters.update(parameters)
 
     def get_parameters(self):
         return self.parameters

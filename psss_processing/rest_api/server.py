@@ -2,7 +2,9 @@ import json
 import logging
 
 import bottle
+bottle.BaseRequest.MEMFILE_MAX = 30000000
 from bottle import request, response
+import numpy
 
 from psss_processing import config
 
@@ -34,27 +36,34 @@ def register_rest_interface(app, instance_manager):
         return {"state": "ok",
                 "status": instance_manager.get_status()}
 
-    @app.get(api_root_address + "/roi")
-    def get_roi():
+    @app.post(api_root_address + "/background")
+    def set_background():
+        req = request.json
+
+        parameters = {
+            "background": req["filename"],
+            "background_data": None
+        }
+
+        if req['data'] is not None:
+            data = numpy.array(req['data'], dtype='uint16')
+            parameters["background_data"] = data
+
+        instance_manager.set_parameters(parameters)
 
         return {"state": "ok",
-                "status": instance_manager.get_status(),
-                "roi": instance_manager.get_roi()}
-
-    @app.post(api_root_address + "/roi")
-    def set_roi():
-        roi = request.json
-        instance_manager.set_roi(roi)
-
-        return {"state": "ok",
-                "status": instance_manager.get_status(),
-                "roi": instance_manager.get_roi()}
+                "status": instance_manager.get_status()}
 
     @app.get(api_root_address + "/parameters")
     def get_parameters():
+        parameters = {}
+        for k,v in instance_manager.get_parameters().items():
+            if k not in ['background_data']:
+                parameters[k] = v
+
         return {"state": "ok",
                 "status": instance_manager.get_status(),
-                "parameters": instance_manager.get_parameters()}
+                "parameters": parameters}
 
     @app.post(api_root_address + "/parameters")
     def set_parameters():

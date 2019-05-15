@@ -186,7 +186,7 @@ Please see the **Run Docker Container** chapter.
 ## Run Docker Container
 To execute the application inside a docker container, you must first start it (from the project root folder):
 ```bash
-docker run --net=host -it docker.psi.ch:5000/psss_processing /bin/bash
+docker run --net=host -it paulscherrerinstitute/psss_processing /bin/bash
 ```
 
 Once inside the container, start the application by running (append the parameters you need.)

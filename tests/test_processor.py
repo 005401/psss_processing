@@ -26,16 +26,16 @@ class TestProcessing(unittest.TestCase):
 
         processed_data = process_image(image, axis, image_property_name, roi, parameters)
         self.assertSetEqual(set(processed_data.keys()), {image_property_name + ".processing_parameters",
-                                                         image_property_name + ".spectrum",
-                                                         image_property_name + ".energy",
-                                                         image_property_name + ".center",
-                                                         image_property_name + ".fwhm",
+                                                         image_property_name + ".SPECTRUM_Y",
+                                                         image_property_name + ".SPECTRUM_X",
+                                                         image_property_name + ".SPECTRUM_CENTER",
+                                                         image_property_name + ".SPECTRUM_FWHM",
                                                          image_property_name})
 
         # Original image should not be manipulated
         self.assertEqual(image.shape, (1024, 512))
 
-        self.assertEqual(len(processed_data[image_property_name + ".spectrum"]), 512)
+        self.assertEqual(len(processed_data[image_property_name + ".SPECTRUM_Y"]), 512)
 
         processing_parameters = json.loads(processed_data[image_property_name + ".processing_parameters"])
 
@@ -60,6 +60,8 @@ class TestProcessing(unittest.TestCase):
                                                     output_stream_port=11000,
                                                     epics_pv_name_prefix=pv_name_prefix,
                                                     output_pv_name="Does not matter",
+                                                    center_pv_name="",
+                                                    fwhm_pv_name="",
                                                     ymin_pv_name="",
                                                     ymax_pv_name="",
                                                     axis_pv_name="")

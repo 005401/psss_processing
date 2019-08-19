@@ -50,10 +50,10 @@ def process_image(image, axis, image_property_name, roi, parameters):
     offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2])
 
     # outputs
-    processed_data[image_property_name + ".spectrum"] = spectrum
-    processed_data[image_property_name + ".energy"] = axis
-    processed_data[image_property_name + ".center"] = center
-    processed_data[image_property_name + ".fwhm"] = 2.355 * sigma
+    processed_data[image_property_name + ".SPECTRUM_Y"] = spectrum
+    processed_data[image_property_name + ".SPECTRUM_X"] = axis
+    processed_data[image_property_name + ".SPECTRUM_CENTER"] = center
+    processed_data[image_property_name + ".SPECTRUM_FWHM"] = 2.355 * sigma
 
     return processed_data
 
@@ -162,18 +162,18 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         except zmq.Again:
                             pass
 
-                        statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".spectrum"]
+                        statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".SPECTRUM_Y"]
                         statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
                         if output_pv_name and output_pv.connected:
-                            output_pv.put(processed_data[image_property_name + ".spectrum"])
+                            output_pv.put(processed_data[image_property_name + ".SPECTRUM_Y"])
                             _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
 
                         if center_pv_name and center_pv.connected:
-                            center_pv.put(processed_data[image_property_name + ".center"])
+                            center_pv.put(processed_data[image_property_name + ".SPECTRUM_CENTER"])
 
                         if fwhm_pv_name and fwhm_pv.connected:
-                            fwhm_pv.put(processed_data[image_property_name + ".fwhm"])
+                            fwhm_pv.put(processed_data[image_property_name + ".SPECTRUM_FWHM"])
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

@@ -112,9 +112,10 @@ In this case, the server will look for the image in the **SARFE10-PSSS059:FPICTU
 
 This means that the output stream will have the following parameters:
 - SARFE10-PSSS059:FPICTURE (The original camera image)
-- SARFE10-PSSS059:FPICTURE.spectrum (The spectrum, calculated after manipulating the original image)
-- SARFE10-PSSS059:FPICTURE.center (Center energy of the fitted Gaussian curve)
-- SARFE10-PSSS059:FPICTURE.fwhm (FHHM of the fitted Gaussian curve)
+- SARFE10-PSSS059:FPICTURE.SPECTRUM\_X (The spectrum energy axis, input from an EPICS PV)
+- SARFE10-PSSS059:FPICTURE.SPECTRUM\_Y (The spectrum data, calculated after manipulating the original image)
+- SARFE10-PSSS059:FPICTURE.SPECTRUM\_CENTER (Center energy of the fitted Gaussian curve)
+- SARFE10-PSSS059:FPICTURE.SPECTRUM\_FWHM (FHHM of the fitted Gaussian curve)
 - SARFE10-PSSS059:FPICTURE.processing\_parameters (The processing parameters used to manipulate the image)
 
 ### Processing parameters format

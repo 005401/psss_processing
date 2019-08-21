@@ -6,11 +6,17 @@ source:
     path: ..
 
 build:
+    noarch: python
     number: 0
+    script: python -m pip install --no-deps --ignore-installed .
+    entry_points:
+        - psss_processing = psss_processing.start_processing:main
 
 requirements:
     build:
         - python
+        - setuptools
+        - pip
 
     run:
         - python
@@ -21,11 +27,6 @@ requirements:
         - numpy
         - scipy
         - numba
-
-
-build:
-  entry_points:
-    - psss_processing = psss_processing.start_processing:main
 
 about:
     home: https://github.com/paulscherrerinstitute/psss_processing

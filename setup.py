@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="psss_processing",
-      version="1.6.0",
+      version="1.6.1",
       author="Paul Scherrer Institute",
       description="PSSS image processing.",
       license="GPL3",

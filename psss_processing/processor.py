@@ -15,11 +15,13 @@ from psss_processing import config, functions
 _logger = logging.getLogger(__name__)
 
 
-def process_image(image, axis, image_property_name, roi, parameters):
+def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
     processed_data = dict()
 
+    image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
+
     processed_data[image_property_name] = image
-    processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi": roi,
+    processed_data[epics_pv_name_prefix + ":processing_parameters"] = json.dumps({"roi": roi,
                                                                                  "background": parameters['background']})
     processing_image = image
     # validate background data
@@ -50,10 +52,10 @@ def process_image(image, axis, image_property_name, roi, parameters):
     offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2])
 
     # outputs
-    processed_data[image_property_name + ".SPECTRUM_Y"] = spectrum
-    processed_data[image_property_name + ".SPECTRUM_X"] = axis
-    processed_data[image_property_name + ".SPECTRUM_CENTER"] = center
-    processed_data[image_property_name + ".SPECTRUM_FWHM"] = 2.355 * sigma
+    processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"] = spectrum
+    processed_data[epics_pv_name_prefix + ":SPECTRUM_X"] = axis
+    processed_data[epics_pv_name_prefix + ":SPECTRUM_CENTER"] = center
+    processed_data[epics_pv_name_prefix + ":SPECTRUM_FWHM"] = 2.355 * sigma
 
     return processed_data
 
@@ -146,7 +148,7 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
 
                         processed_data = process_image(image_to_process,
                                                        axis,
-                                                       image_property_name,
+                                                       epics_pv_name_prefix,
                                                        roi,
                                                        parameters)
 
@@ -162,18 +164,18 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         except zmq.Again:
                             pass
 
-                        statistics["last_calculated_spectrum"] = processed_data[image_property_name + ".SPECTRUM_Y"]
+                        statistics["last_calculated_spectrum"] = processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"]
                         statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
 
                         if output_pv_name and output_pv.connected:
-                            output_pv.put(processed_data[image_property_name + ".SPECTRUM_Y"])
+                            output_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"])
                             _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
 
                         if center_pv_name and center_pv.connected:
-                            center_pv.put(processed_data[image_property_name + ".SPECTRUM_CENTER"])
+                            center_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_CENTER"])
 
                         if fwhm_pv_name and fwhm_pv.connected:
-                            fwhm_pv.put(processed_data[image_property_name + ".SPECTRUM_FWHM"])
+                            fwhm_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_FWHM"])
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

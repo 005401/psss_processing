@@ -37,6 +37,8 @@ class TestClient(unittest.TestCase):
                              rest_api_port=10000,
                              epics_pv_name_prefix=self.pv_name_prefix,
                              output_pv=None,
+                             center_pv=None,
+                             fwhm_pv=None,
                              ymin_pv=None,
                              ymax_pv=None,
                              axis_pv=None,

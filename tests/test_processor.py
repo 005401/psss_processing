@@ -17,27 +17,27 @@ class TestProcessing(unittest.TestCase):
         image = numpy.zeros(shape=(1024, 512), dtype="uint16")
         image += 1
 
-        image_property_name = "TESTING_IMAGE"
+        pv_name_prefix = "JUST_TESTING"
 
         axis = numpy.linspace(9100, 9200, 512)
 
         roi = [0, 1024]
         parameters = {"background": ""}
 
-        processed_data = process_image(image, axis, image_property_name, roi, parameters)
-        self.assertSetEqual(set(processed_data.keys()), {image_property_name + ".processing_parameters",
-                                                         image_property_name + ".SPECTRUM_Y",
-                                                         image_property_name + ".SPECTRUM_X",
-                                                         image_property_name + ".SPECTRUM_CENTER",
-                                                         image_property_name + ".SPECTRUM_FWHM",
-                                                         image_property_name})
+        processed_data = process_image(image, axis, pv_name_prefix, roi, parameters)
+        self.assertSetEqual(set(processed_data.keys()), {pv_name_prefix + ":processing_parameters",
+                                                         pv_name_prefix + ":SPECTRUM_Y",
+                                                         pv_name_prefix + ":SPECTRUM_X",
+                                                         pv_name_prefix + ":SPECTRUM_CENTER",
+                                                         pv_name_prefix + ":SPECTRUM_FWHM",
+                                                         pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE})
 
         # Original image should not be manipulated
         self.assertEqual(image.shape, (1024, 512))
 
-        self.assertEqual(len(processed_data[image_property_name + ".SPECTRUM_Y"]), 512)
+        self.assertEqual(len(processed_data[pv_name_prefix + ":SPECTRUM_Y"]), 512)
 
-        processing_parameters = json.loads(processed_data[image_property_name + ".processing_parameters"])
+        processing_parameters = json.loads(processed_data[pv_name_prefix + ":processing_parameters"])
 
     def test_stream_processor(self):
         pv_name_prefix = "JUST_TESTING"
@@ -91,11 +91,10 @@ class TestProcessing(unittest.TestCase):
 
         self.assertEqual(len(final_data), 1)
 
-        parameters = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE +
-                                             ".processing_parameters"].value
+        parameters = final_data[0].data.data[pv_name_prefix + ":processing_parameters"].value
         processing_parameters = json.loads(parameters)
 
-        spectrum = final_data[0].data.data[pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE + ".spectrum"].value
+        spectrum = final_data[0].data.data[pv_name_prefix + ":SPECTRUM_Y"].value
 
         self.assertEqual(len(spectrum), 512)
         self.assertListEqual(list(spectrum), [1024] * 512)

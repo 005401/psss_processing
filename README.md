@@ -112,16 +112,16 @@ In this case, the server will look for the image in the **SARFE10-PSSS059:FPICTU
 
 This means that the output stream will have the following parameters:
 - SARFE10-PSSS059:FPICTURE (The original camera image)
-- SARFE10-PSSS059:FPICTURE.SPECTRUM\_X (The spectrum energy axis, input from an EPICS PV)
-- SARFE10-PSSS059:FPICTURE.SPECTRUM\_Y (The spectrum data, calculated after manipulating the original image)
-- SARFE10-PSSS059:FPICTURE.SPECTRUM\_CENTER (Center energy of the fitted Gaussian curve)
-- SARFE10-PSSS059:FPICTURE.SPECTRUM\_FWHM (FHHM of the fitted Gaussian curve)
-- SARFE10-PSSS059:FPICTURE.processing\_parameters (The processing parameters used to manipulate the image)
+- SARFE10-PSSS059:SPECTRUM\_X (The spectrum energy axis, input from an EPICS PV)
+- SARFE10-PSSS059:SPECTRUM\_Y (The spectrum data, calculated after manipulating the original image)
+- SARFE10-PSSS059:SPECTRUM\_CENTER (Center energy of the fitted Gaussian curve)
+- SARFE10-PSSS059:SPECTRUM\_FWHM (FHHM of the fitted Gaussian curve)
+- SARFE10-PSSS059:processing\_parameters (The processing parameters used to manipulate the image)
 
 ### Processing parameters format
 The processing parameters are passed to the output stream as a JSON string. Example:
 ```
-SARFE10-PSSS059:FPICTURE.processing_parameters = 
+SARFE10-PSSS059:processing\_parameters = 
 '{"background": "", "roi": [100, 200]}'
 ```
 

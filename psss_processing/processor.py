@@ -18,11 +18,9 @@ _logger = logging.getLogger(__name__)
 def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
     processed_data = dict()
 
-    image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
+    processed_data[epics_pv_name_prefix + ":processing_parameters"] = \
+        json.dumps({"roi": roi, "background": parameters['background']})
 
-    processed_data[image_property_name] = image
-    processed_data[epics_pv_name_prefix + ":processing_parameters"] = json.dumps({"roi": roi,
-                                                                                 "background": parameters['background']})
     processing_image = image
     # validate background data
     background_image = parameters.get('background_data')
@@ -60,8 +58,9 @@ def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
     return processed_data
 
 
-def get_stream_processor(input_stream_host, input_stream_port, output_stream_port, epics_pv_name_prefix,
-                         output_pv_name, center_pv_name, fwhm_pv_name, ymin_pv_name, ymax_pv_name, axis_pv_name):
+def get_stream_processor(input_stream_host, input_stream_port, data_output_stream_port, image_output_stream_port,
+                         epics_pv_name_prefix, output_pv_name, center_pv_name, fwhm_pv_name, ymin_pv_name,
+                         ymax_pv_name, axis_pv_name):
     def stream_processor(running_flag, parameters, statistics):
         try:
             running_flag.set()
@@ -69,7 +68,8 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
             _logger.info("Connecting to input_stream_host %s and input_stream_port %s.",
                          input_stream_host, input_stream_port)
 
-            _logger.info("Sending out data on stream port %s.", output_stream_port)
+            _logger.info("Sending out data on stream port %s.", data_output_stream_port)
+            _logger.info("Sending out images on stream port %s.", image_output_stream_port)
 
             if output_pv_name:
                 _logger.info("Sending out spectrum data on EPICS PV %s.", output_pv_name)
@@ -106,76 +106,90 @@ def get_stream_processor(input_stream_host, input_stream_port, output_stream_por
                         queue_size=config.INPUT_STREAM_QUEUE_SIZE,
                         receive_timeout=config.INPUT_STREAM_RECEIVE_TIMEOUT) as input_stream:
 
-                with sender(port=output_stream_port, send_timeout=config.OUTPUT_STREAM_SEND_TIMEOUT,
-                            block=False) as output_stream:
+                with sender(port=data_output_stream_port, send_timeout=config.OUTPUT_STREAM_SEND_TIMEOUT,
+                            block=False) as data_output_stream:
 
-                    statistics["processing_start_time"] = str(datetime.datetime.now())
-                    statistics["last_sent_pulse_id"] = None
-                    statistics["last_sent_time"] = None
-                    statistics["last_calculated_spectrum"] = None
-                    statistics["n_processed_images"] = 0
+                    with sender(port=image_output_stream_port, send_timeout=config.OUTPUT_STREAM_SEND_TIMEOUT,
+                                block=False, queue_size=config.IMAGE_OUTPUT_STREAM_QUEUE_SIZE) as image_output_stream:
 
-                    image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
+                        statistics["processing_start_time"] = str(datetime.datetime.now())
+                        statistics["last_sent_pulse_id"] = None
+                        statistics["last_sent_time"] = None
+                        statistics["last_calculated_spectrum"] = None
+                        statistics["n_processed_images"] = 0
 
-                    _logger.info("Using image_to_process property name '%s'.", image_property_name)
+                        image_property_name = epics_pv_name_prefix + config.EPICS_PV_SUFFIX_IMAGE
 
-                    while running_flag.is_set():
+                        _logger.info("Using image_to_process property name '%s'.", image_property_name)
 
-                        message = input_stream.receive()
+                        while running_flag.is_set():
 
-                        if message is None:
-                            continue
+                            message = input_stream.receive()
 
-                        pulse_id = message.data.pulse_id
-                        timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
+                            if message is None:
+                                continue
 
-                        _logger.debug("Received message with pulse_id %s", pulse_id)
+                            pulse_id = message.data.pulse_id
+                            timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
 
-                        image_to_process = message.data.data[image_property_name].value
+                            _logger.debug("Received message with pulse_id %s", pulse_id)
 
-                        if ymin_pv_name and ymin_pv.connected:
-                            roi[0] = ymin_pv.value
-                        if ymax_pv_name and ymax_pv.connected:
-                            roi[1] = ymax_pv.value
-                        if axis_pv_name and axis_pv.connected:
-                            axis = axis_pv.value
-                        else:
-                            axis = None
+                            image_to_process = message.data.data[image_property_name].value
+                            image_data = {image_property_name: image_to_process}
 
-                        if axis is None or len(axis) != image_to_process.shape[1]:
-                            _logger.warn("Invalid energy axis")
-                            continue
+                            if ymin_pv_name and ymin_pv.connected:
+                                roi[0] = ymin_pv.value
+                            if ymax_pv_name and ymax_pv.connected:
+                                roi[1] = ymax_pv.value
+                            if axis_pv_name and axis_pv.connected:
+                                axis = axis_pv.value
+                            else:
+                                axis = None
 
-                        processed_data = process_image(image_to_process,
-                                                       axis,
-                                                       epics_pv_name_prefix,
-                                                       roi,
-                                                       parameters)
+                            if axis is None or len(axis) != image_to_process.shape[1]:
+                                _logger.warn("Invalid energy axis")
+                                continue
 
-                        try:
-                            output_stream.send(pulse_id=pulse_id,
-                                               timestamp=timestamp,
-                                               data=processed_data)
+                            processed_data = process_image(image_to_process,
+                                                           axis,
+                                                           epics_pv_name_prefix,
+                                                           roi,
+                                                           parameters)
 
-                            _logger.debug("Sent message with pulse_id %s", pulse_id)
+                            try:
+                                data_output_stream.send(pulse_id=pulse_id,
+                                                        timestamp=timestamp,
+                                                        data=processed_data)
 
-                            statistics["last_sent_pulse_id"] = pulse_id
-                            statistics["last_sent_time"] = str(datetime.datetime.now())
-                        except zmq.Again:
-                            pass
+                                _logger.debug("Sent data message with pulse_id %s", pulse_id)
 
-                        statistics["last_calculated_spectrum"] = processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"]
-                        statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
+                                statistics["last_sent_pulse_id"] = pulse_id
+                                statistics["last_sent_time"] = str(datetime.datetime.now())
+                            except zmq.Again:
+                                pass
 
-                        if output_pv_name and output_pv.connected:
-                            output_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"])
-                            _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+                            try:
+                                image_output_stream.send(pulse_id=pulse_id,
+                                                         timestamp=timestamp,
+                                                         data=image_data)
 
-                        if center_pv_name and center_pv.connected:
-                            center_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_CENTER"])
+                                _logger.debug("Sent image message with pulse_id %s", pulse_id)
+                            except zmq.Again:
+                                pass
 
-                        if fwhm_pv_name and fwhm_pv.connected:
-                            fwhm_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_FWHM"])
+                            statistics["last_calculated_spectrum"] = processed_data[epics_pv_name_prefix +
+                                                                                    ":SPECTRUM_Y"]
+                            statistics["n_processed_images"] = statistics.get("n_processed_images", 0) + 1
+
+                            if output_pv_name and output_pv.connected:
+                                output_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"])
+                                _logger.debug("caput on %s for pulse_id %s", output_pv, pulse_id)
+
+                            if center_pv_name and center_pv.connected:
+                                center_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_CENTER"])
+
+                            if fwhm_pv_name and fwhm_pv.connected:
+                                fwhm_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_FWHM"])
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)

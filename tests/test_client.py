@@ -32,7 +32,8 @@ class TestClient(unittest.TestCase):
 
         def process_data():
             start_processing(input_stream="tcp://localhost:10001",
-                             output_stream_port=12000,
+                             data_output_stream_port=12000,
+                             image_output_stream_port=12001,
                              rest_api_interface="0.0.0.0",
                              rest_api_port=10000,
                              epics_pv_name_prefix=self.pv_name_prefix,

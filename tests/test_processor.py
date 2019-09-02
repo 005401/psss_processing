@@ -57,7 +57,8 @@ class TestProcessing(unittest.TestCase):
         def process_data(event):
             stream_processor = get_stream_processor(input_stream_host="localhost",
                                                     input_stream_port=10000,
-                                                    output_stream_port=11000,
+                                                    data_output_stream_port=11000,
+                                                    image_output_stream_port=11001,
                                                     epics_pv_name_prefix=pv_name_prefix,
                                                     output_pv_name="Does not matter",
                                                     center_pv_name="",

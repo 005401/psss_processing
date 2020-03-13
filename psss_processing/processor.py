@@ -124,7 +124,11 @@ def get_stream_processor(input_stream_host, input_stream_port, data_output_strea
 
                         while running_flag.is_set():
 
-                            message = input_stream.receive()
+                            try:
+                                message = input_stream.receive()
+                            except:
+                                _logger.exception("input stream receiving error")
+                                continue
 
                             if message is None:
                                 continue

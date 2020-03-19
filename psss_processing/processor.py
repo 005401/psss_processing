@@ -112,6 +112,11 @@ def get_stream_processor(input_stream_host, input_stream_port, data_output_strea
                     with sender(port=image_output_stream_port, send_timeout=config.OUTPUT_STREAM_SEND_TIMEOUT,
                                 block=False, queue_size=config.IMAGE_OUTPUT_STREAM_QUEUE_SIZE) as image_output_stream:
 
+
+                        # use zmq zero-copy for image data
+                        image_output_stream.stream.zmq_copy = False
+                        image_output_stream.stream.zmq_track = True
+
                         statistics["processing_start_time"] = str(datetime.datetime.now())
                         statistics["last_sent_pulse_id"] = None
                         statistics["last_sent_time"] = None

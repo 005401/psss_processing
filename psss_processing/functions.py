@@ -51,6 +51,11 @@ def gauss_fit(profile, axis, **kwargs):
     # Consider gaussian integral is amplitude * sigma * sqrt(2*pi)
     standard_deviation = kwargs.get('standard_deviation', numpy.trapz((profile - offset), x=axis) / (amplitude * numpy.sqrt(2 * numpy.pi)))
     maxfev = kwargs.get('maxfev', 20) # the default is 100 * (N + 1), which is over killing
+
+    # If user requests fitting to be skipped, return the estimated parameters.
+    if kwargs.get('skip', False):
+        return offset, amplitude, center, abs(standard_deviation)
+
     try:
         optimal_parameter, _ = scipy.optimize.curve_fit(
                 _gauss_function, axis, profile.astype("float64"),

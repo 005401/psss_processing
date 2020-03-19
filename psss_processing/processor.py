@@ -22,6 +22,7 @@ def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
         json.dumps({"roi": roi, "background": parameters['background']})
 
     processing_image = image
+    nrows, ncols = processing_image.shape
     # validate background data
     background_image = parameters.get('background_data')
     if isinstance(background_image, numpy.ndarray):
@@ -32,7 +33,7 @@ def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
 
     # crop the image in y direction
     ymin, ymax = roi
-    if processing_image.shape[0] > ymax > ymin > 0:
+    if nrows > ymax > ymin > 0:
         processing_image = processing_image[ymin:ymax, :]
         if background_image is not None:
             background_image = background_image[ymin:ymax, :]
@@ -46,8 +47,16 @@ def process_image(image, axis, epics_pv_name_prefix, roi, parameters):
     # smooth the spectrum with savgol filter with 51 window size and 3rd order polynomial
     smoothed_spectrum = scipy.signal.savgol_filter(spectrum, 51, 3)
 
+    # check wether spectrum has only noise. the average counts per pixel at the peak
+    # should be larger than 1.5 to be considered as having real signals.
+    minimum, maximum = smoothed_spectrum.min(), smoothed_spectrum.max()
+    amplitude = maximum - minimum
+    skip = True
+    if amplitude > nrows * 1.5:
+        skip = False
     # gaussian fitting
-    offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2])
+    offset, amplitude, center, sigma = functions.gauss_fit(smoothed_spectrum[::2], axis[::2],
+            offset=minimum, amplitude=amplitude, skip=skip)
 
     # outputs
     processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"] = spectrum

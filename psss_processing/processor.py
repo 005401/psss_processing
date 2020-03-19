@@ -135,10 +135,13 @@ def get_stream_processor(input_stream_host, input_stream_port, data_output_strea
 
                             pulse_id = message.data.pulse_id
                             timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
+                            image_to_process = message.data.data[image_property_name].value
+
+                            if image_to_process is None:
+                                continue
 
                             _logger.debug("Received message with pulse_id %s", pulse_id)
 
-                            image_to_process = message.data.data[image_property_name].value
                             image_data = {image_property_name: image_to_process}
 
                             if ymin_pv_name and ymin_pv.connected:

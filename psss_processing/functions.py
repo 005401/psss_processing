@@ -50,7 +50,7 @@ def gauss_fit(profile, axis, **kwargs):
     center = kwargs.get('center', numpy.dot(axis, profile) / profile.sum()) # Center of mass is a good estimation of center (mu)
     # Consider gaussian integral is amplitude * sigma * sqrt(2*pi)
     standard_deviation = kwargs.get('standard_deviation', numpy.trapz((profile - offset), x=axis) / (amplitude * numpy.sqrt(2 * numpy.pi)))
-    maxfev = kwargs.get('maxfev', 100) # the default is 100 * (N + 1), which is over killing
+    maxfev = kwargs.get('maxfev', 20) # the default is 100 * (N + 1), which is over killing
     try:
         optimal_parameter, _ = scipy.optimize.curve_fit(
                 _gauss_function, axis, profile.astype("float64"),

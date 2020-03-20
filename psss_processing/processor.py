@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import time
 
 import numpy
 import scipy.signal
@@ -147,6 +148,7 @@ def get_stream_processor(input_stream_host, input_stream_port, data_output_strea
                             if message is None:
                                 continue
 
+                            start_time = time.time()
                             pulse_id = message.data.pulse_id
                             timestamp = (message.data.global_timestamp, message.data.global_timestamp_offset)
                             image_to_process = message.data.data[image_property_name].value
@@ -211,6 +213,9 @@ def get_stream_processor(input_stream_host, input_stream_port, data_output_strea
 
                             if fwhm_pv_name and fwhm_pv.connected:
                                 fwhm_pv.put(processed_data[epics_pv_name_prefix + ":SPECTRUM_FWHM"])
+
+                            duration = (time.time() - start_time) * 1000
+                            statistics["last_processing_duration_ms"] = duration
 
         except Exception as e:
             _logger.error("Error while processing the stream. Exiting. Error: ", e)
